@@ -1,0 +1,304 @@
+// Sync — data model.
+//
+// PostgreSQL is the authoritative source of truth for every authorization
+// decision. Redis and the external meeting provider are never authoritative.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+  moduleFormat = "esm"
+  runtime  = "nodejs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum CallStatus {
+  DRAFT
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+enum InvitationStatus {
+  ACTIVE
+  REVOKED
+  EXPIRED
+}
+
+enum AttendanceStatus {
+  NOT_JOINED
+  ACTIVE
+  COMPLETED
+}
+
+enum AttendanceSessionStatus {
+  CONNECTED
+  LEFT
+  REVOKED
+  WINDOW_CLOSED
+  CALL_ENDED
+  DISCONNECTED
+}
+
+enum TranscriptStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+  DELETED
+}
+
+enum AuditOutcome {
+  SUCCESS
+  DENIED
+  FAILURE
+}
+
+// ---------------------------------------------------------------------------
+// Application models
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String
+  emailVerified Boolean   @default(false)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  organizedCalls Call[]        @relation("CallOrganizer")
+  invitations    Invitation[]
+  attendances    Attendance[]
+  auditEvents    AuditEvent[]  @relation("AuditActor")
+  sessions       Session[]
+  accounts       Account[]
+  captionLines   CaptionLine[]
+
+  @@map("users")
+}
+
+model Call {
+  id             String     @id @default(cuid())
+  organizerId    String
+  title          String
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  timezone       String
+  status         CallStatus @default(SCHEDULED)
+  providerCallId String?
+  cancelledAt    DateTime?
+  endedAt        DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  organizer   User         @relation("CallOrganizer", fields: [organizerId], references: [id], onDelete: Cascade)
+  invitations Invitation[]
+  attendances Attendance[]
+  transcript   Transcript?
+  auditEvents  AuditEvent[]
+  captionLines CaptionLine[]
+
+  @@index([organizerId, scheduledStart(sort: Desc)])
+  @@index([scheduledStart])
+  @@index([scheduledEnd])
+  @@index([status, scheduledStart])
+  @@map("calls")
+}
+
+model Invitation {
+  id            String           @id @default(cuid())
+  callId        String
+  participantId String
+  // SHA-256 of the raw opaque token. The raw token is never persisted.
+  tokenHash     String           @unique
+  status        InvitationStatus @default(ACTIVE)
+  issuedAt      DateTime         @default(now())
+  expiresAt     DateTime
+  revokedAt     DateTime?
+  revokedById   String?
+  lastUsedAt    DateTime?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  call        Call         @relation(fields: [callId], references: [id], onDelete: Cascade)
+  participant User         @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  auditEvents AuditEvent[]
+
+  @@unique([callId, participantId])
+  @@index([tokenHash])
+  @@index([participantId, callId])
+  @@index([callId, status])
+  @@index([callId, createdAt(sort: Desc)])
+  @@map("invitations")
+}
+
+model Attendance {
+  id                    String           @id @default(cuid())
+  callId                String
+  participantId         String
+  firstJoinedAt         DateTime?
+  lastLeftAt            DateTime?
+  totalConnectedSeconds Int              @default(0)
+  status                AttendanceStatus @default(NOT_JOINED)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  call        Call               @relation(fields: [callId], references: [id], onDelete: Cascade)
+  participant User               @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  sessions    AttendanceSession[]
+
+  @@unique([callId, participantId])
+  @@index([callId, participantId])
+  @@index([callId, createdAt(sort: Desc)])
+  @@map("attendances")
+}
+
+model AttendanceSession {
+  id                String                  @id @default(cuid())
+  attendanceId      String
+  providerSessionId String?
+  deviceId          String
+  joinedAt          DateTime                @default(now())
+  lastHeartbeatAt   DateTime?
+  leftAt            DateTime?
+  leftReason        String?
+  status            AttendanceSessionStatus @default(CONNECTED)
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+
+  attendance Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+
+  @@index([attendanceId, joinedAt])
+  @@index([attendanceId, status])
+  @@map("attendance_sessions")
+}
+
+/// A line someone actually said, as their own browser transcribed it.
+///
+/// Attribution is stamped by the server from the speaker's session, never
+/// taken from the client, so a line cannot be put in someone else's mouth.
+/// Only settled ("final") lines are stored — interim guesses are for the live
+/// caption panel and are never written down.
+model CaptionLine {
+  id        String   @id @default(cuid())
+  callId    String
+  speakerId String
+  /// Denormalised so a transcript still reads correctly if the user is gone.
+  speakerName String
+  text      String
+  spokenAt  DateTime
+  createdAt DateTime @default(now())
+
+  call    Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+  speaker User @relation(fields: [speakerId], references: [id], onDelete: Cascade)
+
+  @@index([callId, spokenAt])
+  @@map("caption_lines")
+}
+
+model Transcript {
+  id          String           @id @default(cuid())
+  callId      String           @unique
+  status      TranscriptStatus @default(PENDING)
+  content     String?
+  failureCode String?
+  attempts    Int              @default(0)
+  generatedAt DateTime?
+  expiresAt   DateTime?
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  call Call @relation(fields: [callId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([status])
+  @@index([status, expiresAt])
+  @@map("transcripts")
+}
+
+/// Append-only. Never store raw tokens, cookies, headers or provider secrets.
+model AuditEvent {
+  id           String       @id @default(cuid())
+  actorUserId  String?
+  callId       String?
+  invitationId String?
+  action       String
+  outcome      AuditOutcome
+  requestId    String?
+  ipAddress    String?
+  userAgent    String?
+  metadata     Json?
+  createdAt    DateTime     @default(now())
+
+  actor      User?       @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+  call       Call?       @relation(fields: [callId], references: [id], onDelete: Cascade)
+  invitation Invitation? @relation(fields: [invitationId], references: [id], onDelete: SetNull)
+
+  @@index([callId, createdAt(sort: Desc)])
+  @@index([actorUserId, createdAt(sort: Desc)])
+  @@index([action, createdAt(sort: Desc)])
+  @@map("audit_events")
+}
+
+// ---------------------------------------------------------------------------
+// Better Auth tables
+// ---------------------------------------------------------------------------
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  idToken               String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verifications")
+}

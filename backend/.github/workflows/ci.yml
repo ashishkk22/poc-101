@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '24'
+
+jobs:
+  static:
+    name: Lint & typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
+      - run: pnpm lint
+      - run: pnpm typecheck
+
+  test:
+    name: Tests (${{ matrix.suite }})
+    runs-on: ubuntu-latest
+    needs: static
+    defaults:
+      run:
+        working-directory: backend
+
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [unit, integration, security, concurrency]
+
+    # Real PostgreSQL and Redis: the guarantees under test depend on database
+    # constraints and transactions, so Prisma is never mocked here.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: timebound
+          POSTGRES_PASSWORD: timebound
+          POSTGRES_DB: timebound_meet_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U timebound"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      NODE_ENV: test
+      DATABASE_URL: postgresql://timebound:timebound@localhost:5432/timebound_meet_test?schema=public
+      REDIS_URL: redis://localhost:6379/1
+      BETTER_AUTH_SECRET: ci-secret-value-that-is-long-enough
+      BETTER_AUTH_URL: http://localhost:4100
+      FRONTEND_ORIGIN: http://localhost:5173
+      PROVIDER_MODE: mock
+      TRANSCRIPTION_MODE: mock
+      RATE_LIMIT_ENABLED: 'false'
+      LOG_LEVEL: silent
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec prisma generate
+
+      # Migration validation: a FRESH database must reach the current schema
+      # purely by replaying committed migrations. `db push` is never used.
+      - name: Apply migrations to a fresh database
+        if: matrix.suite != 'unit'
+        run: pnpm exec prisma migrate deploy
+
+      - name: Verify migrations leave no schema drift
+        if: matrix.suite != 'unit'
+        run: pnpm exec prisma migrate diff --from-config-datasource --to-schema prisma/schema.prisma --exit-code
+
+      - name: Verify the seed runs against a migrated database
+        if: matrix.suite == 'integration'
+        run: pnpm db:seed
+
+      - run: pnpm test:${{ matrix.suite }}
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: test
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+          cache-dependency-path: backend/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+
+      - name: Build the production image
+        run: docker build --target production -t timebound-meet-backend:ci .

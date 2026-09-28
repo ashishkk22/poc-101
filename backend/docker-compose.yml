@@ -1,0 +1,110 @@
+# Reproducible local stack: `docker compose up` brings up everything.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: timebound
+      POSTGRES_PASSWORD: timebound
+      POSTGRES_DB: timebound_meet
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U timebound -d timebound_meet']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    command: ['redis-server', '--appendonly', 'yes']
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # NOTE ON SECRETS
+  # The defaults below are deliberately local-only and are safe to commit.
+  # Compose reads ./.env for ${VAR} substitution, so these use TIMEBOUND_*
+  # names to avoid colliding with the application's own .env. For anything
+  # beyond a local demo, supply a real secret:
+  #   TIMEBOUND_AUTH_SECRET="$(openssl rand -base64 32)" docker compose up
+  api:
+    build:
+      context: .
+      target: production
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      # Containers address each other by service name, never by IP.
+      DATABASE_URL: postgresql://timebound:timebound@postgres:5432/timebound_meet?schema=public
+      REDIS_URL: redis://redis:6379
+      BETTER_AUTH_SECRET: ${TIMEBOUND_AUTH_SECRET:-timebound-local-compose-secret-do-not-deploy}
+      BETTER_AUTH_URL: http://localhost:4000
+      FRONTEND_ORIGIN: ${TIMEBOUND_FRONTEND_ORIGIN:-http://localhost:5173}
+      JOIN_URL_BASE: ${TIMEBOUND_JOIN_URL_BASE:-http://localhost:5173}
+      PROVIDER_MODE: mock
+      # captions = write up what people actually said during the call.
+      TRANSCRIPTION_MODE: captions
+      TRANSCRIPT_RETENTION_DAYS: 30
+      RATE_LIMIT_ENABLED: 'true'
+      LOG_LEVEL: info
+      # The API container owns migrations; the worker waits for it.
+      RUN_MIGRATIONS: 'true'
+    ports:
+      - '4000:4000'
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      target: production
+    command: ['node', 'dist/src/workers/worker.js']
+    # The worker shares the API image but serves no HTTP, so it can never
+    # satisfy that image's HTTP HEALTHCHECK. Left enabled it would report
+    # permanently unhealthy and break restart/rollout policies.
+    healthcheck:
+      disable: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://timebound:timebound@postgres:5432/timebound_meet?schema=public
+      REDIS_URL: redis://redis:6379
+      BETTER_AUTH_SECRET: ${TIMEBOUND_AUTH_SECRET:-timebound-local-compose-secret-do-not-deploy}
+      BETTER_AUTH_URL: http://localhost:4000
+      FRONTEND_ORIGIN: ${TIMEBOUND_FRONTEND_ORIGIN:-http://localhost:5173}
+      PROVIDER_MODE: mock
+      # captions = write up what people actually said during the call.
+      TRANSCRIPTION_MODE: captions
+      TRANSCRIPT_RETENTION_DAYS: 30
+      LOG_LEVEL: info
+      RUN_MIGRATIONS: 'false'
+    restart: unless-stopped
+
+  mailpit:
+    image: axllent/mailpit:latest
+    profiles: ['optional']
+    ports:
+      - '8025:8025'
+      - '1025:1025'
+
+volumes:
+  postgres-data:
+  redis-data:

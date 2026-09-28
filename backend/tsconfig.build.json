@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    // rootDir is the project root so that prisma/seed.ts compiles alongside
+    // src/, preserving the `../src/...` imports it relies on. Output is
+    // therefore dist/src/** and dist/prisma/seed.js.
+    "rootDir": ".",
+    "outDir": "dist",
+    "sourceMap": false
+  },
+  "include": ["src/**/*.ts", "prisma/seed.ts"],
+  "exclude": ["node_modules", "dist", "tests", "**/*.test.ts"]
+}
