@@ -80,3 +80,51 @@ describe('CreateCallPage form', () => {
     expect(screen.getByRole('button', { name: /set it up/i })).toBeDisabled();
   });
 });
+
+describe('scheduling in another timezone', () => {
+  it('sends the time as the chosen zone reads it, not the browser', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    renderWithProviders(<CallForm onSubmit={onSubmit} pending={false} error={null} />);
+
+    await user.type(screen.getByLabelText(/title/i), 'Handover with New York');
+
+    // Pick a zone that is not this machine's.
+    await user.click(screen.getByRole('combobox', { name: /timezone/i }));
+    await user.type(await screen.findByLabelText(/search timezones/i), 'New_York');
+    await user.click(await screen.findByRole('option', { name: /New York/i }));
+
+    await user.clear(screen.getByLabelText(/starts/i));
+    await user.type(screen.getByLabelText(/starts/i), '2026-10-03T14:00');
+    await user.clear(screen.getByLabelText(/ends/i));
+    await user.type(screen.getByLabelText(/ends/i), '2026-10-03T15:00');
+
+    await user.click(screen.getByRole('button', { name: /set it up/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+    const input = onSubmit.mock.calls[0]![0] as {
+      scheduledStart: string;
+      scheduledEnd: string;
+      timezone: string;
+    };
+
+    // 14:00 in New York is 18:00Z. Reading it in the browser's zone — which is
+    // what the form used to do — would have produced 08:30Z.
+    expect(input.timezone).toBe('America/New_York');
+    expect(input.scheduledStart).toBe('2026-10-03T18:00:00.000Z');
+    expect(input.scheduledEnd).toBe('2026-10-03T19:00:00.000Z');
+  });
+
+  it("defaults to the viewer's own zone", async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn();
+    renderWithProviders(<CallForm onSubmit={onSubmit} pending={false} error={null} />);
+
+    await user.type(screen.getByLabelText(/title/i), 'Local catch-up');
+    await user.click(screen.getByRole('button', { name: /set it up/i }));
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledOnce());
+    const input = onSubmit.mock.calls[0]![0] as { timezone: string };
+    expect(input.timezone).toBe(Intl.DateTimeFormat().resolvedOptions().timeZone);
+  });
+});

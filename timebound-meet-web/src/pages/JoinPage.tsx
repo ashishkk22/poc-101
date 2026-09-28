@@ -1,11 +1,17 @@
-import { useRef } from 'react';
-import { Loader2, ShieldAlert } from 'lucide-react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { BrandWordmark } from '@/components/common/brand';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ThemeToggle } from '@/components/layout/theme-toggle';
-import { useCurrentUser } from '@/features/auth';
+import { useRef } from "react";
+import { Loader2, ShieldAlert } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { BrandWordmark } from "@/components/common/Brand";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { useCurrentUser } from "@/features/auth";
 import {
   CallLobby,
   newDeviceId,
@@ -13,8 +19,8 @@ import {
   useCallSession,
   useLocalMedia,
   useResolveLink,
-} from '@/features/join';
-import { ErrorCode, toDisplayError } from '@/lib/errors';
+} from "@/features/join";
+import { ErrorCode, toDisplayError } from "@/lib/errors";
 
 /** Denials no amount of retrying will change. */
 const FINAL_DENIALS = new Set<string>([
@@ -34,7 +40,7 @@ const FINAL_DENIALS = new Set<string>([
  * when the person says so.
  */
 export function JoinPage(): React.JSX.Element {
-  const { token = '' } = useParams<{ token: string }>();
+  const { token = "" } = useParams<{ token: string }>();
   const navigate = useNavigate();
   const { user } = useCurrentUser();
   const { start } = useCallSession();
@@ -48,7 +54,8 @@ export function JoinPage(): React.JSX.Element {
   const display = failure ? toDisplayError(failure) : null;
 
   const isWrongAccount = display?.code === ErrorCode.PARTICIPANT_MISMATCH;
-  const isRetryable = display !== null && !isWrongAccount && !FINAL_DENIALS.has(display.code);
+  const isRetryable =
+    display !== null && !isWrongAccount && !FINAL_DENIALS.has(display.code);
 
   if (resolved.isSuccess && !display) {
     return (
@@ -61,19 +68,19 @@ export function JoinPage(): React.JSX.Element {
         <div className="flex flex-1 items-center">
           <CallLobby
             call={resolved.data.call}
-            viewerName={user?.name ?? 'You'}
+            viewerName={user?.name ?? "You"}
             media={media}
             joining={authorize.isPending}
             error={authorize.error}
             roleLabel="You were invited"
-            onCancel={() => navigate('/dashboard')}
+            onCancel={() => navigate("/dashboard")}
             onJoin={() =>
               authorize.mutate(
                 { token, deviceId: deviceId.current },
                 {
-                  onSuccess: (result) => {
+                  onSuccess: result => {
                     start({
-                      via: 'INVITE_LINK',
+                      via: "INVITE_LINK",
                       token,
                       callId: result.call.id,
                       deviceId: deviceId.current,
@@ -109,7 +116,10 @@ export function JoinPage(): React.JSX.Element {
             <>
               <CardHeader className="items-start">
                 <div className="flex size-10 items-center justify-center rounded-lg bg-destructive/10">
-                  <ShieldAlert className="size-5 text-destructive" aria-hidden="true" />
+                  <ShieldAlert
+                    className="size-5 text-destructive"
+                    aria-hidden="true"
+                  />
                 </div>
                 <CardTitle>{display.title}</CardTitle>
                 <CardDescription>{display.description}</CardDescription>
@@ -118,15 +128,19 @@ export function JoinPage(): React.JSX.Element {
               <CardContent className="space-y-4">
                 {isWrongAccount && user ? (
                   <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-                    You're signed in as{' '}
-                    <span className="font-medium text-foreground">{user.email}</span>. Switch to
-                    the account it was sent to, then open the link again.
+                    You're signed in as{" "}
+                    <span className="font-medium text-foreground">
+                      {user.email}
+                    </span>
+                    . Switch to the account it was sent to, then open the link
+                    again.
                   </p>
                 ) : null}
 
                 {display.requestId ? (
                   <p className="text-xs text-muted-foreground">
-                    Reference: <code className="font-mono">{display.requestId}</code>
+                    Reference:{" "}
+                    <code className="font-mono">{display.requestId}</code>
                   </p>
                 ) : null}
 
@@ -161,11 +175,16 @@ export function JoinPage(): React.JSX.Element {
           ) : (
             <CardContent className="flex flex-col items-center gap-3 py-12 text-center">
               <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10">
-                <Loader2 className="size-5 animate-spin text-primary" aria-hidden="true" />
+                <Loader2
+                  className="size-5 animate-spin text-primary"
+                  aria-hidden="true"
+                />
               </div>
               <div className="space-y-1" role="status" aria-live="polite">
                 <p className="font-medium">One moment…</p>
-                <p className="text-sm text-muted-foreground">Just looking up your invite.</p>
+                <p className="text-sm text-muted-foreground">
+                  Just looking up your invite.
+                </p>
               </div>
             </CardContent>
           )}

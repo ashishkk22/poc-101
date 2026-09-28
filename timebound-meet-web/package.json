@@ -3,7 +3,9 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "packageManager": "pnpm@10.34.5",
   "scripts": {
     "dev": "vite",
@@ -14,9 +16,11 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@date-fns/tz": "^1.5.0",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-dialog": "^1.1.16",
     "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-popover": "^1.1.23",
     "@radix-ui/react-select": "^2.2.7",
     "@radix-ui/react-separator": "^1.1.8",
     "@radix-ui/react-slot": "^1.2.4",

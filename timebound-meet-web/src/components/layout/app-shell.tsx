@@ -1,18 +1,24 @@
-import { CalendarClock, CalendarPlus, LogOut, MailCheck, User } from 'lucide-react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
-import { BrandLink } from '@/components/common/brand';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { useCurrentUser, useSignOut } from '@/features/auth';
-import { notify } from '@/lib/toast';
-import { config } from '@/lib/config/env';
-import { cn } from '@/lib/utils';
-import { RealtimeStatusBadge } from './realtime-status-badge';
-import { ThemeToggle } from './theme-toggle';
+import {
+  CalendarClock,
+  CalendarPlus,
+  LogOut,
+  MailCheck,
+  User,
+} from "lucide-react";
+import { Link, NavLink, Outlet } from "react-router-dom";
+import { BrandLink } from "@/components/common/Brand";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { useCurrentUser, useSignOut } from "@/features/auth";
+import { notify } from "@/lib/toast";
+import { config } from "@/lib/config/env";
+import { cn } from "@/lib/utils";
+import { RealtimeStatusBadge } from "./realtime-status-badge";
+import { ThemeToggle } from "./theme-toggle";
 
 const NAV = [
-  { to: '/dashboard', label: 'Meetings', icon: CalendarClock },
-  { to: '/invitations', label: 'Invites', icon: MailCheck },
+  { to: "/dashboard", label: "Meetings", icon: CalendarClock },
+  { to: "/invitations", label: "Invites", icon: MailCheck },
 ] as const;
 
 function initials(name: string): string {
@@ -21,8 +27,8 @@ function initials(name: string): string {
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('') || '?'
+      .map(part => part[0]?.toUpperCase() ?? "")
+      .join("") || "?"
   );
 }
 
@@ -52,10 +58,10 @@ export function AppShell(): React.JSX.Element {
                 to={to}
                 className={({ isActive }) =>
                   cn(
-                    'inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                    "inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
                     isActive
-                      ? 'bg-accent text-accent-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
                   )
                 }
               >
@@ -66,7 +72,12 @@ export function AppShell(): React.JSX.Element {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
-            <Button asChild variant="outline" size="sm" className="hidden sm:inline-flex">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="hidden sm:inline-flex"
+            >
               <Link to="/calls/new">
                 <CalendarPlus aria-hidden="true" />
                 New meeting
@@ -90,7 +101,10 @@ export function AppShell(): React.JSX.Element {
                 <span className="max-w-32 truncate text-sm">{user.name}</span>
               </span>
             ) : (
-              <User className="size-4 text-muted-foreground md:hidden" aria-hidden="true" />
+              <User
+                className="size-4 text-muted-foreground md:hidden"
+                aria-hidden="true"
+              />
             )}
 
             <Button
@@ -100,9 +114,12 @@ export function AppShell(): React.JSX.Element {
                 signOut.mutate(undefined, {
                   // The cookie is HttpOnly, so only the server can end the
                   // session. If it did not, saying "signed out" would be false.
-                  onError: (error) => {
+                  onError: error => {
                     notify.error(error);
-                    notify.info('You are still signed in', 'Your session could not be ended.');
+                    notify.info(
+                      "You are still signed in",
+                      "Your session could not be ended.",
+                    );
                   },
                 })
               }
@@ -116,7 +133,10 @@ export function AppShell(): React.JSX.Element {
         </div>
       </header>
 
-      <main id="main" className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8">
+      <main
+        id="main"
+        className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:py-8"
+      >
         <Outlet />
       </main>
 

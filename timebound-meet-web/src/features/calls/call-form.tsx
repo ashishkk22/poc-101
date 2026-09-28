@@ -1,12 +1,19 @@
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ErrorState } from '@/components/common/error-state';
-import { isoToLocalInput, localInputToIso, localTimezone } from '@/lib/date/format';
-import type { CreateCallInput } from '@/lib/api';
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ErrorState } from "@/components/common/error-state";
+import { TimezoneSelect } from "@/components/common/TimezoneSelect";
+import {
+  formatInZone,
+  isoToZonedInput,
+  localTimeZone,
+  zonedInputToIso,
+  zonesDiffer,
+} from "@/lib/date/timezone";
+import type { CreateCallInput } from "@/lib/api";
 
 /**
  * Client validation mirrors the backend's rules for fast feedback. It is not
@@ -15,30 +22,45 @@ import type { CreateCallInput } from '@/lib/api';
  */
 const callSchema = z
   .object({
-    title: z.string().trim().min(1, 'Title is required').max(200, 'Keep the title under 200 characters'),
-    scheduledStart: z.string().min(1, 'Start time is required'),
-    scheduledEnd: z.string().min(1, 'End time is required'),
-    timezone: z.string().min(1, 'Timezone is required'),
+    title: z
+      .string()
+      .trim()
+      .min(1, "Title is required")
+      .max(200, "Keep the title under 200 characters"),
+    scheduledStart: z.string().min(1, "Start time is required"),
+    scheduledEnd: z.string().min(1, "End time is required"),
+    timezone: z.string().min(1, "Timezone is required"),
   })
-  .refine((value) => new Date(value.scheduledEnd) > new Date(value.scheduledStart), {
-    message: 'The end time must be after the start time',
-    path: ['scheduledEnd'],
-  });
+  .refine(
+    value => {
+      const start = zonedInputToIso(value.scheduledStart, value.timezone);
+      const end = zonedInputToIso(value.scheduledEnd, value.timezone);
+      return Boolean(start) && Boolean(end) && new Date(end) > new Date(start);
+    },
+    {
+      message: "The end time must be after the start time",
+      path: ["scheduledEnd"],
+    },
+  );
 
 type CallFormValues = z.infer<typeof callSchema>;
 
-function defaultWindow(): { start: string; end: string } {
+function defaultWindow(timeZone: string): { start: string; end: string } {
   const start = new Date(Date.now() + 15 * 60_000);
   start.setSeconds(0, 0);
   const end = new Date(start.getTime() + 60 * 60_000);
-  return { start: isoToLocalInput(start.toISOString()), end: isoToLocalInput(end.toISOString()) };
+
+  return {
+    start: isoToZonedInput(start.toISOString(), timeZone),
+    end: isoToZonedInput(end.toISOString(), timeZone),
+  };
 }
 
 export function CallForm({
   onSubmit,
   pending,
   error,
-  submitLabel = 'Set it up',
+  submitLabel = "Set it up",
   onCancel,
 }: {
   onSubmit: (input: CreateCallInput) => void;
@@ -47,32 +69,47 @@ export function CallForm({
   submitLabel?: string;
   onCancel?: () => void;
 }): React.JSX.Element {
-  const window = defaultWindow();
+  const viewerZone = localTimeZone();
+  const window = defaultWindow(viewerZone);
 
   const {
     register,
     handleSubmit,
+    control,
+    watch,
     formState: { errors },
   } = useForm<CallFormValues>({
     resolver: zodResolver(callSchema),
     defaultValues: {
-      title: '',
+      title: "",
       scheduledStart: window.start,
       scheduledEnd: window.end,
-      timezone: localTimezone(),
+      timezone: viewerZone,
     },
   });
+
+  // The times entered are wall-clock times in THIS zone, whatever zone the
+  // person filling the form happens to be sitting in.
+  const timezone = watch("timezone");
+  const start = watch("scheduledStart");
+
+  const startIso = timezone && start ? zonedInputToIso(start, timezone) : "";
+  const showViewerTime = Boolean(startIso) && zonesDiffer(timezone, viewerZone);
 
   return (
     <form
       noValidate
       className="space-y-5"
-      onSubmit={handleSubmit((values) =>
+      onSubmit={handleSubmit(values =>
         onSubmit({
           title: values.title.trim(),
-          // The API takes UTC; the picker speaks the browser's local time.
-          scheduledStart: localInputToIso(values.scheduledStart),
-          scheduledEnd: localInputToIso(values.scheduledEnd),
+          // The API takes UTC. The entered times are wall-clock times in the
+          // zone chosen below — NOT in whatever zone this browser is in.
+          scheduledStart: zonedInputToIso(
+            values.scheduledStart,
+            values.timezone,
+          ),
+          scheduledEnd: zonedInputToIso(values.scheduledEnd, values.timezone),
           timezone: values.timezone,
         }),
       )}
@@ -85,8 +122,8 @@ export function CallForm({
           id="title"
           placeholder="Weekly catch-up"
           aria-invalid={Boolean(errors.title)}
-          aria-describedby={errors.title ? 'title-error' : undefined}
-          {...register('title')}
+          aria-describedby={errors.title ? "title-error" : undefined}
+          {...register("title")}
         />
         {errors.title ? (
           <p id="title-error" className="text-sm text-destructive">
@@ -102,8 +139,8 @@ export function CallForm({
             id="scheduledStart"
             type="datetime-local"
             aria-invalid={Boolean(errors.scheduledStart)}
-            aria-describedby={errors.scheduledStart ? 'start-error' : undefined}
-            {...register('scheduledStart')}
+            aria-describedby={errors.scheduledStart ? "start-error" : undefined}
+            {...register("scheduledStart")}
           />
           {errors.scheduledStart ? (
             <p id="start-error" className="text-sm text-destructive">
@@ -118,8 +155,8 @@ export function CallForm({
             id="scheduledEnd"
             type="datetime-local"
             aria-invalid={Boolean(errors.scheduledEnd)}
-            aria-describedby={errors.scheduledEnd ? 'end-error' : undefined}
-            {...register('scheduledEnd')}
+            aria-describedby={errors.scheduledEnd ? "end-error" : undefined}
+            {...register("scheduledEnd")}
           />
           {errors.scheduledEnd ? (
             <p id="end-error" className="text-sm text-destructive">
@@ -131,22 +168,36 @@ export function CallForm({
 
       <div className="space-y-2">
         <Label htmlFor="timezone">Timezone</Label>
-        <Input
-          id="timezone"
-          placeholder="Asia/Kolkata"
-          aria-invalid={Boolean(errors.timezone)}
-          aria-describedby="timezone-hint"
-          {...register('timezone')}
+        <Controller
+          control={control}
+          name="timezone"
+          render={({ field }) => (
+            <TimezoneSelect
+              id="timezone"
+              value={field.value}
+              onChange={field.onChange}
+              aria-describedby="timezone-hint"
+            />
+          )}
         />
         <p id="timezone-hint" className="text-xs text-muted-foreground">
-          The timezone this meeting is set in. You're entering times in your own local time.
+          {showViewerTime
+            ? `The times above are in this timezone. That's ${formatInZone(startIso, viewerZone)} where you are.`
+            : "The times above are in this timezone."}
         </p>
-        {errors.timezone ? <p className="text-sm text-destructive">{errors.timezone.message}</p> : null}
+        {errors.timezone ? (
+          <p className="text-sm text-destructive">{errors.timezone.message}</p>
+        ) : null}
       </div>
 
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         {onCancel ? (
-          <Button type="button" variant="outline" onClick={onCancel} disabled={pending}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={pending}
+          >
             Cancel
           </Button>
         ) : null}

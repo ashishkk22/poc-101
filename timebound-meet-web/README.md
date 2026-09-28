@@ -29,7 +29,7 @@ Demo accounts come from the backend seed (`pnpm db:seed` there):
 | `pnpm build` | Typecheck, then a production bundle in `dist/` |
 | `pnpm preview` | Serve the production build locally |
 | `pnpm typecheck` | TypeScript only |
-| `pnpm test` | Vitest + React Testing Library (90 tests) |
+| `pnpm test` | Vitest + React Testing Library (112 tests) |
 
 ## How it is put together
 
@@ -155,6 +155,30 @@ Vocabulary: a **meeting** is what users have; a **call** is the object in the
 API. The person who set it up is the **host** (`organizerId` in the data).
 Taking an invite back is "taking it back", not "revoking" — the code says
 revoke, the interface does not.
+
+## Timezones
+
+A meeting is scheduled at a **wall-clock time in a place** — "14:00 in New
+York" — and the API stores the instant that refers to, in UTC. Converting
+between the two is the entire job of `lib/date/timezone.ts`, and it must never
+be done by hand:
+
+```js
+new Date('2026-10-03T14:00')   // reads the string in the BROWSER's zone
+```
+
+A host in Mumbai scheduling a New York meeting that way books it **nine and a
+half hours early**, with a timezone field that looks like it worked. The form
+therefore resolves entered times through `zonedInputToIso(value, timeZone)`,
+which is DST-aware down to the day a zone changes its clocks.
+
+Display runs the other way: times are shown in the **viewer's** zone, and the
+meeting's own zone is mentioned only when it is a different clock — compared by
+current offset, so nobody in London is told what time it is in London.
+
+The picker offers only zones the browser knows, each with its current offset,
+and always includes the viewer's own zone even when the browser reports it
+under a legacy alias (`Asia/Calcutta` for `Asia/Kolkata`).
 
 ## Nothing pulls you out of a call
 

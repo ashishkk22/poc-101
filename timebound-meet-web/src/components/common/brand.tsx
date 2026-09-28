@@ -1,6 +1,11 @@
-import { Link } from 'react-router-dom';
-import { config } from '@/lib/config/env';
-import { cn } from '@/lib/utils';
+import { Link, type LinkProps } from "react-router-dom";
+import { config } from "@/lib/config/env";
+import { cn } from "@/lib/utils";
+
+type BrandMarkProps = {
+  className?: string;
+  title?: string;
+};
 
 /**
  * The wordmark.
@@ -11,16 +16,13 @@ import { cn } from '@/lib/utils';
 export function BrandMark({
   className,
   title = config.appName,
-}: {
-  className?: string;
-  title?: string;
-}): React.JSX.Element {
+}: BrandMarkProps) {
   return (
     <svg
       viewBox="0 0 32 32"
       role="img"
       aria-label={title}
-      className={cn('size-7', className)}
+      className={cn("size-7", className)}
       fill="none"
     >
       <path
@@ -29,7 +31,13 @@ export function BrandMark({
         strokeWidth="1.8"
         strokeLinejoin="round"
       />
-      <circle cx="16" cy="15.5" r="6" className="stroke-primary" strokeWidth="1.8" />
+      <circle
+        cx="16"
+        cy="15.5"
+        r="6"
+        className="stroke-primary"
+        strokeWidth="1.8"
+      />
       <path
         d="M16 12v3.8l2.6 1.6"
         className="stroke-primary"
@@ -41,15 +49,17 @@ export function BrandMark({
   );
 }
 
+type BrandWordmarkProps = {
+  className?: string;
+  showTagline?: boolean;
+};
+
 export function BrandWordmark({
   className,
   showTagline = false,
-}: {
-  className?: string;
-  showTagline?: boolean;
-}): React.JSX.Element {
+}: BrandWordmarkProps) {
   return (
-    <span className={cn('flex items-center gap-2.5', className)}>
+    <span className={cn("flex items-center gap-2.5", className)}>
       <BrandMark />
       <span className="flex flex-col leading-none">
         <span className="font-semibold tracking-tight">{config.appName}</span>
@@ -63,11 +73,14 @@ export function BrandWordmark({
   );
 }
 
-export function BrandLink({ to = '/', className }: { to?: string; className?: string }) {
+export function BrandLink({ to = "/", className }: LinkProps) {
   return (
     <Link
       to={to}
-      className={cn('rounded-md transition-opacity hover:opacity-80', className)}
+      className={cn(
+        "rounded-md transition-opacity hover:opacity-80",
+        className,
+      )}
       aria-label={`${config.appName} home`}
     >
       <BrandWordmark />

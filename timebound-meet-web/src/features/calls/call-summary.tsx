@@ -1,7 +1,19 @@
-import { CalendarClock, Clock, Globe, Hourglass } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { formatDateTime, formatDuration, formatRelative, parse } from '@/lib/date/format';
-import type { Call } from '@/lib/api/types';
+import { CalendarClock, Clock, Globe, Hourglass } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  formatDateTime,
+  formatDuration,
+  formatRelative,
+  parse,
+} from "@/lib/date/format";
+import {
+  formatInZone,
+  localTimeZone,
+  zoneCity,
+  zoneOffsetLabel,
+  zonesDiffer,
+} from "@/lib/date/timezone";
+import type { Call } from "@/lib/api/types";
 
 function Fact({
   icon: Icon,
@@ -32,29 +44,52 @@ function Fact({
 export function CallSummary({ call }: { call: Call }): React.JSX.Element {
   const start = parse(call.scheduledStart);
   const end = parse(call.scheduledEnd);
-  const durationSeconds = start && end ? (end.getTime() - start.getTime()) / 1000 : 0;
+  const durationSeconds =
+    start && end ? (end.getTime() - start.getTime()) / 1000 : 0;
+
+  // Everything is shown in the viewer's own zone. The meeting's zone earns a
+  // mention only when it is a different clock, and then it says so explicitly
+  // rather than printing a zone name beside a local time.
+  const viewerZone = localTimeZone();
+  const elsewhere = zonesDiffer(call.timezone, viewerZone);
 
   return (
     <Card>
       <CardContent className="grid gap-5 p-5 sm:grid-cols-2 lg:grid-cols-4">
         <Fact
           icon={CalendarClock}
-          label="Opens"
+          label="Starts"
           value={formatDateTime(call.scheduledStart)}
-          hint={formatRelative(call.scheduledStart)}
+          {...(elsewhere
+            ? {
+                hint: `${formatInZone(call.scheduledStart, call.timezone)} in ${zoneCity(call.timezone)}`,
+              }
+            : { hint: formatRelative(call.scheduledStart) })}
         />
         <Fact
           icon={Clock}
-          label="Closes"
+          label="Ends"
           value={formatDateTime(call.scheduledEnd)}
-          hint={formatRelative(call.scheduledEnd)}
+          {...(elsewhere
+            ? {
+                hint: `${formatInZone(call.scheduledEnd, call.timezone)} in ${zoneCity(call.timezone)}`,
+              }
+            : { hint: formatRelative(call.scheduledEnd) })}
         />
-        <Fact icon={Hourglass} label="Window" value={formatDuration(durationSeconds)} />
+        <Fact
+          icon={Hourglass}
+          label="Lasts"
+          value={formatDuration(durationSeconds)}
+        />
         <Fact
           icon={Globe}
-          label="Scheduled in"
-          value={call.timezone}
-          hint="Times shown in your local timezone"
+          label={elsewhere ? "Your time" : "Timezone"}
+          value={zoneCity(viewerZone)}
+          hint={
+            elsewhere
+              ? `Set in ${zoneCity(call.timezone)} · ${zoneOffsetLabel(call.timezone)}`
+              : zoneOffsetLabel(viewerZone)
+          }
         />
       </CardContent>
     </Card>

@@ -1,25 +1,25 @@
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Clock, ScrollText, ShieldOff } from 'lucide-react';
-import type { ReactNode } from 'react';
-import { BrandLink } from '@/components/common/brand';
-import { ThemeToggle } from '@/components/layout/theme-toggle';
-import { config } from '@/lib/config/env';
+import { Link } from "react-router-dom";
+import { ArrowLeft, Clock, ScrollText, ShieldOff } from "lucide-react";
+import type { ReactNode } from "react";
+import { BrandLink } from "@/components/common/Brand";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { config } from "@/lib/config/env";
 
 const PILLARS = [
   {
     icon: Clock,
-    title: 'Access lives in a window',
-    body: 'An invitation works inside the scheduled window and nowhere else — not before it opens, not after it closes.',
+    title: "Access lives in a window",
+    body: "An invitation works inside the scheduled window and nowhere else — not before it opens, not after it closes.",
   },
   {
     icon: ShieldOff,
-    title: 'Change your mind any time',
-    body: 'Take someone off the guest list and they drop out within seconds — even mid-call.',
+    title: "Change your mind any time",
+    body: "Take someone off the guest list and they drop out within seconds — even mid-call.",
   },
   {
     icon: ScrollText,
-    title: 'See exactly what happened',
-    body: 'Who joined, who left, who tried and could not — all there when you need it.',
+    title: "See exactly what happened",
+    body: "Who joined, who left, who tried and could not — all there when you need it.",
   },
 ] as const;
 
@@ -54,9 +54,12 @@ export function AuthLayout({
 
         <div className="relative max-w-md space-y-8">
           <div className="space-y-3">
-            <h2 className="text-2xl font-semibold tracking-tight">{config.tagline}</h2>
+            <h2 className="text-2xl font-semibold tracking-tight">
+              {config.tagline}
+            </h2>
             <p className="text-sm text-muted-foreground">
-              Set a time, invite the people you want, and know exactly who was there.
+              Set a time, invite the people you want, and know exactly who was
+              there.
             </p>
           </div>
 
@@ -109,7 +112,9 @@ export function AuthLayout({
 
             {children}
 
-            {footer ? <div className="text-sm text-muted-foreground">{footer}</div> : null}
+            {footer ? (
+              <div className="text-sm text-muted-foreground">{footer}</div>
+            ) : null}
           </div>
         </div>
       </main>

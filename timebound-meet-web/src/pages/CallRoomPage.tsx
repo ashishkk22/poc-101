@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Captions,
   History,
@@ -8,29 +8,29 @@ import {
   SignalLow,
   UserPlus,
   Users,
-} from 'lucide-react';
-import { Link, Navigate, useParams } from 'react-router-dom';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { BrandMark, BrandWordmark } from '@/components/common/brand';
-import { ThemeToggle } from '@/components/layout/theme-toggle';
-import { ConfirmDialog } from '@/components/common/confirm-dialog';
-import { CallControls } from '@/components/call/call-controls';
-import { CallTimer } from '@/components/call/call-timer';
-import { VideoTile } from '@/components/call/video-tile';
-import { useCurrentUser } from '@/features/auth';
-import { CallStatusBadge, useEndCall } from '@/features/calls';
-import { LiveCaptionPanel } from '@/features/captions';
+} from "lucide-react";
+import { Link, Navigate, useParams } from "react-router-dom";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { BrandMark, BrandWordmark } from "@/components/common/Brand";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ConfirmDialog } from "@/components/common/confirm-dialog";
+import { CallControls } from "@/components/call/call-controls";
+import { CallTimer } from "@/components/call/call-timer";
+import { VideoTile } from "@/components/call/video-tile";
+import { useCurrentUser } from "@/features/auth";
+import { CallStatusBadge, useEndCall } from "@/features/calls";
+import { LiveCaptionPanel } from "@/features/captions";
 import {
   CallPeoplePanel,
   MESH_LIMIT,
   useCallActivity,
   useLiveCaptions,
   useWebRtcMesh,
-} from '@/features/call-media';
-import { ActivityPanel } from '@/components/call/activity-panel';
+} from "@/features/call-media";
+import { ActivityPanel } from "@/components/call/activity-panel";
 import {
   useCallRoster,
   useCallSession,
@@ -38,13 +38,13 @@ import {
   useLeaveCall,
   useLocalMedia,
   type TerminationReason,
-} from '@/features/join';
-import { callsApi, joinApi } from '@/lib/api';
-import type { CallParticipant } from '@/lib/api/types';
-import { RealtimeEvent, useCallRoom, useRealtimeEvent } from '@/lib/realtime';
-import { toDisplayError } from '@/lib/errors';
-import { notify } from '@/lib/toast';
-import { cn } from '@/lib/utils';
+} from "@/features/join";
+import { callsApi, joinApi } from "@/lib/api";
+import type { CallParticipant } from "@/lib/api/types";
+import { RealtimeEvent, useCallRoom, useRealtimeEvent } from "@/lib/realtime";
+import { toDisplayError } from "@/lib/errors";
+import { notify } from "@/lib/toast";
+import { cn } from "@/lib/utils";
 
 /**
  * Endings the participant chose.
@@ -53,52 +53,61 @@ import { cn } from '@/lib/utils';
  * passing and put somewhere they can act. Every other ending is something
  * that happened TO them, and is shown in full.
  */
-const VOLUNTARY_EXITS = new Set<TerminationReason['kind']>(['LEFT', 'ENDED_BY_ME']);
+const VOLUNTARY_EXITS = new Set<TerminationReason["kind"]>([
+  "LEFT",
+  "ENDED_BY_ME",
+]);
 
 /** A peer we answered before learning its name is still on the roster. */
 function nameFor(userId: string, roster: CallParticipant[]): string {
-  return roster.find((person) => person.id === userId)?.name ?? 'Participant';
+  return roster.find(person => person.id === userId)?.name ?? "Participant";
 }
 
 /** Copy for every way a call can end. The reason is always stated plainly. */
 const TERMINATION_COPY: Record<
-  TerminationReason['kind'],
-  { title: string; description: string; tone: 'destructive' | 'warning' | 'default' }
+  TerminationReason["kind"],
+  {
+    title: string;
+    description: string;
+    tone: "destructive" | "warning" | "default";
+  }
 > = {
   REVOKED: {
-    title: 'You were removed from this call',
-    description: 'The host took you off the guest list.',
-    tone: 'destructive',
+    title: "You were removed from this call",
+    description: "The host took you off the guest list.",
+    tone: "destructive",
   },
   FORCED_DISCONNECT: {
-    title: 'The host disconnected you',
-    description: 'You were dropped from the call.',
-    tone: 'destructive',
+    title: "The host disconnected you",
+    description: "You were dropped from the call.",
+    tone: "destructive",
   },
   CALL_ENDED: {
     title: "That's a wrap",
-    description: 'The host ended the call for everyone.',
-    tone: 'default',
+    description: "The host ended the call for everyone.",
+    tone: "default",
   },
   ENDED_BY_ME: {
-    title: 'Call ended',
-    description: "Everyone's been disconnected. We're writing up the transcript now.",
-    tone: 'default',
+    title: "Call ended",
+    description:
+      "Everyone's been disconnected. We're writing up the transcript now.",
+    tone: "default",
   },
   WINDOW_CLOSED: {
     title: "Time's up",
-    description: 'The call reached its finish time, so everyone was disconnected.',
-    tone: 'warning',
+    description:
+      "The call reached its finish time, so everyone was disconnected.",
+    tone: "warning",
   },
   LEFT: {
-    title: 'You left the call',
-    description: 'See you next time.',
-    tone: 'default',
+    title: "You left the call",
+    description: "See you next time.",
+    tone: "default",
   },
   ERROR: {
-    title: 'The call stopped',
+    title: "The call stopped",
     description: "Something got in the way and we couldn't keep it going.",
-    tone: 'warning',
+    tone: "warning",
   },
 };
 
@@ -112,8 +121,9 @@ function TerminationScreen({
   canRejoin: boolean;
 }): React.JSX.Element {
   const copy = TERMINATION_COPY[termination.kind];
-  const detail = termination.kind === 'ERROR' ? toDisplayError(termination.error) : null;
-  const removed = copy.tone === 'destructive';
+  const detail =
+    termination.kind === "ERROR" ? toDisplayError(termination.error) : null;
+  const removed = copy.tone === "destructive";
 
   return (
     <div className="flex min-h-svh flex-col">
@@ -126,14 +136,20 @@ function TerminationScreen({
         <div className="w-full max-w-lg space-y-6 text-center">
           <div
             className={cn(
-              'mx-auto flex size-14 items-center justify-center rounded-2xl',
-              removed ? 'bg-destructive/10' : 'bg-muted',
+              "mx-auto flex size-14 items-center justify-center rounded-2xl",
+              removed ? "bg-destructive/10" : "bg-muted",
             )}
           >
             {removed ? (
-              <ShieldOff className="size-7 text-destructive" aria-hidden="true" />
+              <ShieldOff
+                className="size-7 text-destructive"
+                aria-hidden="true"
+              />
             ) : (
-              <ShieldAlert className="size-7 text-muted-foreground" aria-hidden="true" />
+              <ShieldAlert
+                className="size-7 text-muted-foreground"
+                aria-hidden="true"
+              />
             )}
           </div>
 
@@ -141,7 +157,11 @@ function TerminationScreen({
             <h1 className="text-2xl font-semibold tracking-tight">
               {detail?.title ?? copy.title}
             </h1>
-            <p className="text-muted-foreground" role="status" aria-live="assertive">
+            <p
+              className="text-muted-foreground"
+              role="status"
+              aria-live="assertive"
+            >
               {detail?.description ?? copy.description}
             </p>
           </div>
@@ -158,7 +178,7 @@ function TerminationScreen({
                 <Link to={`/call/${callId}/lobby`}>Try rejoining</Link>
               </Button>
             ) : null}
-            <Button asChild variant={canRejoin ? 'outline' : 'default'}>
+            <Button asChild variant={canRejoin ? "outline" : "default"}>
               <Link to={`/calls/${callId}`}>Call details</Link>
             </Button>
             <Button asChild variant="outline">
@@ -187,22 +207,23 @@ function TerminationScreen({
  * one interval.
  */
 export function CallRoomPage(): React.JSX.Element {
-  const { callId = '' } = useParams<{ callId: string }>();
+  const { callId = "" } = useParams<{ callId: string }>();
   const { user } = useCurrentUser();
-  const { session, termination, terminate, setDevicePreferences } = useCallSession();
+  const { session, termination, terminate, setDevicePreferences } =
+    useCallSession();
 
   const leaveCall = useLeaveCall();
   const endCall = useEndCall(callId);
 
-  const [confirming, setConfirming] = useState<'leave' | 'end' | null>(null);
+  const [confirming, setConfirming] = useState<"leave" | "end" | null>(null);
   const [rosterOpenOnMobile, setRosterOpenOnMobile] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [sidePanel, setSidePanel] = useState<'participants' | 'captions' | 'activity'>(
-    'participants',
-  );
+  const [sidePanel, setSidePanel] = useState<
+    "participants" | "captions" | "activity"
+  >("participants");
 
   const active = Boolean(session);
-  const isOrganizer = session?.role === 'ORGANIZER';
+  const isOrganizer = session?.role === "ORGANIZER";
 
   const media = useLocalMedia({ enabled: active });
 
@@ -226,7 +247,7 @@ export function CallRoomPage(): React.JSX.Element {
     callId: session ? callId : null,
     enabled: active && room.joined,
     selfUserId: user?.id,
-    selfName: user?.name ?? 'You',
+    selfName: user?.name ?? "You",
   });
 
   // Who came and went, live, for everyone in the room.
@@ -234,17 +255,22 @@ export function CallRoomPage(): React.JSX.Element {
     callId: session ? callId : null,
     enabled: active,
     selfUserId: user?.id,
-    selfName: user?.name ?? 'You',
+    selfName: user?.name ?? "You",
   });
 
   // --- roster --------------------------------------------------------------
 
   const roster = useCallRoster(session ? callId : null, active);
-  const [optimisticRoster, setOptimisticRoster] = useState<CallParticipant[] | null>(null);
+  const [optimisticRoster, setOptimisticRoster] = useState<
+    CallParticipant[] | null
+  >(null);
 
-  const participants = useMemo(() => optimisticRoster ?? roster.data ?? [], [optimisticRoster, roster.data]);
+  const participants = useMemo(
+    () => optimisticRoster ?? roster.data ?? [],
+    [optimisticRoster, roster.data],
+  );
   const others = useMemo(
-    () => participants.filter((person) => person.id !== user?.id),
+    () => participants.filter(person => person.id !== user?.id),
     [participants, user?.id],
   );
 
@@ -255,11 +281,12 @@ export function CallRoomPage(): React.JSX.Element {
 
   useRealtimeEvent(
     RealtimeEvent.PARTICIPANT_JOINED,
-    (payload) => {
+    payload => {
       if (payload.callId !== callId) return;
-      setOptimisticRoster((previous) => {
+      setOptimisticRoster(previous => {
         const base = previous ?? roster.data ?? [];
-        if (base.some((person) => person.id === payload.participantId)) return base;
+        if (base.some(person => person.id === payload.participantId))
+          return base;
         return [
           ...base,
           {
@@ -271,17 +298,20 @@ export function CallRoomPage(): React.JSX.Element {
           },
         ];
       });
-      if (payload.participantId !== user?.id) notify.info(`${payload.name} joined`);
+      if (payload.participantId !== user?.id)
+        notify.info(`${payload.name} joined`);
     },
     active,
   );
 
   useRealtimeEvent(
     RealtimeEvent.PARTICIPANT_LEFT,
-    (payload) => {
+    payload => {
       if (payload.callId !== callId) return;
-      setOptimisticRoster((previous) =>
-        (previous ?? roster.data ?? []).filter((person) => person.id !== payload.participantId),
+      setOptimisticRoster(previous =>
+        (previous ?? roster.data ?? []).filter(
+          person => person.id !== payload.participantId,
+        ),
       );
     },
     active,
@@ -292,7 +322,7 @@ export function CallRoomPage(): React.JSX.Element {
   // --- teardown paths ------------------------------------------------------
 
   const heartbeat = useHeartbeat({
-    via: session?.via ?? 'CALL_ID',
+    via: session?.via ?? "CALL_ID",
     token: session?.token ?? null,
     callId: session ? callId : null,
     sessionId: session?.attendanceSession.id ?? null,
@@ -303,10 +333,12 @@ export function CallRoomPage(): React.JSX.Element {
         const code = (error as { code?: string }).code;
         media.stop();
 
-        if (code === 'INVITE_REVOKED') terminate({ kind: 'REVOKED' });
-        else if (code === 'JOIN_WINDOW_CLOSED') terminate({ kind: 'WINDOW_CLOSED' });
-        else if (code === 'CALL_CANCELLED') terminate({ kind: 'CALL_ENDED', reason: 'CANCELLED' });
-        else terminate({ kind: 'ERROR', error });
+        if (code === "INVITE_REVOKED") terminate({ kind: "REVOKED" });
+        else if (code === "JOIN_WINDOW_CLOSED")
+          terminate({ kind: "WINDOW_CLOSED" });
+        else if (code === "CALL_CANCELLED")
+          terminate({ kind: "CALL_ENDED", reason: "CANCELLED" });
+        else terminate({ kind: "ERROR", error });
       },
       [terminate, media],
     ),
@@ -314,12 +346,12 @@ export function CallRoomPage(): React.JSX.Element {
 
   useRealtimeEvent(
     RealtimeEvent.INVITATION_REVOKED,
-    (payload) => {
+    payload => {
       // Targeted at this participant by the server; acting on it is safe, and
       // the heartbeat would reach the same conclusion a moment later anyway.
       if (payload.callId === callId) {
         media.stop();
-        terminate({ kind: 'REVOKED' });
+        terminate({ kind: "REVOKED" });
       }
     },
     active,
@@ -327,10 +359,10 @@ export function CallRoomPage(): React.JSX.Element {
 
   useRealtimeEvent(
     RealtimeEvent.FORCED_DISCONNECT,
-    (payload) => {
+    payload => {
       if (payload.callId === callId) {
         media.stop();
-        terminate({ kind: 'FORCED_DISCONNECT' });
+        terminate({ kind: "FORCED_DISCONNECT" });
       }
     },
     active,
@@ -338,10 +370,10 @@ export function CallRoomPage(): React.JSX.Element {
 
   useRealtimeEvent(
     RealtimeEvent.CALL_ENDED,
-    (payload) => {
+    payload => {
       if (payload.callId === callId) {
         media.stop();
-        terminate({ kind: 'CALL_ENDED', reason: payload.reason });
+        terminate({ kind: "CALL_ENDED", reason: payload.reason });
       }
     },
     active,
@@ -358,14 +390,17 @@ export function CallRoomPage(): React.JSX.Element {
         callId: session.callId,
         sessionId: session.attendanceSession.id,
         deviceId: session.deviceId,
-        reason: 'USER_LEFT',
+        reason: "USER_LEFT",
       },
       {
         // Leaving always succeeds from the participant's point of view: even
         // if the request fails, their local session is over.
         onSettled: () => {
-          notify.success('You left the call', 'Your attendance has been recorded.');
-          terminate({ kind: 'LEFT' });
+          notify.success(
+            "You left the call",
+            "Your attendance has been recorded.",
+          );
+          terminate({ kind: "LEFT" });
         },
       },
     );
@@ -375,12 +410,15 @@ export function CallRoomPage(): React.JSX.Element {
     media.stop();
     endCall.mutate(undefined, {
       onSuccess: () => {
-        notify.success('Call ended', 'Everyone was disconnected and the transcript is queued.');
-        terminate({ kind: 'ENDED_BY_ME' });
+        notify.success(
+          "Call ended",
+          "Everyone was disconnected and the transcript is queued.",
+        );
+        terminate({ kind: "ENDED_BY_ME" });
       },
-      onError: (error) => {
+      onError: error => {
         notify.error(error);
-        terminate({ kind: 'ERROR', error });
+        terminate({ kind: "ERROR", error });
       },
     });
   }, [endCall, terminate, media]);
@@ -397,22 +435,24 @@ export function CallRoomPage(): React.JSX.Element {
       const body = {
         sessionId: current.attendanceSession.id,
         deviceId: current.deviceId,
-        reason: 'TAB_CLOSED' as const,
+        reason: "TAB_CLOSED" as const,
       };
 
-      void (current.via === 'INVITE_LINK' && current.token
-        ? joinApi.leave(current.token, body, { keepalive: true })
-        : callsApi.leave(current.callId, body, { keepalive: true })
+      void (
+        current.via === "INVITE_LINK" && current.token
+          ? joinApi.leave(current.token, body, { keepalive: true })
+          : callsApi.leave(current.callId, body, { keepalive: true })
       ).catch(() => undefined);
     }
 
-    window.addEventListener('pagehide', onPageHide);
-    return () => window.removeEventListener('pagehide', onPageHide);
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
   }, []);
 
   // Keep the stored preferences in step with the live tracks.
   useEffect(() => {
-    if (active) setDevicePreferences({ micOn: media.micOn, cameraOn: media.cameraOn });
+    if (active)
+      setDevicePreferences({ micOn: media.micOn, cameraOn: media.cameraOn });
   }, [active, media.micOn, media.cameraOn, setDevicePreferences]);
 
   // --- rendering -----------------------------------------------------------
@@ -430,7 +470,7 @@ export function CallRoomPage(): React.JSX.Element {
           termination={termination}
           callId={callId}
           // A transient failure is worth retrying; a withdrawal is not.
-          canRejoin={termination.kind === 'ERROR'}
+          canRejoin={termination.kind === "ERROR"}
         />
       );
     }
@@ -457,13 +497,13 @@ export function CallRoomPage(): React.JSX.Element {
           <p className="text-xs text-muted-foreground">{call.timezone}</p>
         </div>
 
-        <Badge variant={heartbeat.degraded ? 'warning' : 'neutral'}>
+        <Badge variant={heartbeat.degraded ? "warning" : "neutral"}>
           {heartbeat.degraded ? (
             <SignalLow className="size-3" aria-hidden="true" />
           ) : (
             <SignalHigh className="size-3" aria-hidden="true" />
           )}
-          {heartbeat.degraded ? 'Reconnecting' : 'Connected'}
+          {heartbeat.degraded ? "Reconnecting" : "Connected"}
         </Badge>
 
         <CallTimer
@@ -478,16 +518,16 @@ export function CallRoomPage(): React.JSX.Element {
           {/* Tile grid: one column alone, two from sm, three past four people. */}
           <div
             className={cn(
-              'grid flex-1 gap-3',
+              "grid flex-1 gap-3",
               mesh.peers.length === 0
-                ? 'grid-cols-1'
+                ? "grid-cols-1"
                 : mesh.peers.length <= 3
-                  ? 'grid-cols-1 sm:grid-cols-2'
-                  : 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3',
+                  ? "grid-cols-1 sm:grid-cols-2"
+                  : "grid-cols-1 sm:grid-cols-2 xl:grid-cols-3",
             )}
           >
             <VideoTile
-              name={user?.name ?? 'You'}
+              name={user?.name ?? "You"}
               stream={media.stream}
               cameraOn={media.cameraOn}
               micOn={media.micOn}
@@ -500,7 +540,7 @@ export function CallRoomPage(): React.JSX.Element {
               participant on two devices is two peers, and each carries its own
               stream. The roster row is who they are; the tile is what arrived.
             */}
-            {mesh.peers.map((peer) => (
+            {mesh.peers.map(peer => (
               <VideoTile
                 key={peer.peerId}
                 name={peer.name || nameFor(peer.userId, others)}
@@ -518,12 +558,15 @@ export function CallRoomPage(): React.JSX.Element {
               <CardContent className="flex flex-col items-start gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1">
                   <p className="flex items-center gap-2 font-medium">
-                    <Users className="size-4 text-muted-foreground" aria-hidden="true" />
+                    <Users
+                      className="size-4 text-muted-foreground"
+                      aria-hidden="true"
+                    />
                     Just you so far
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {isOrganizer
-                      ? 'Invite a few people and they can join whenever they like.'
+                      ? "Invite a few people and they can join whenever they like."
                       : "Others can drop in any time while the call's open."}
                   </p>
                 </div>
@@ -535,7 +578,7 @@ export function CallRoomPage(): React.JSX.Element {
                       // Show the panel behind it, then open the dialog itself —
                       // switching panels alone does nothing once it is already
                       // the one on screen.
-                      setSidePanel('participants');
+                      setSidePanel("participants");
                       setRosterOpenOnMobile(true);
                       setInviteOpen(true);
                     }}
@@ -554,7 +597,8 @@ export function CallRoomPage(): React.JSX.Element {
               <div>
                 <AlertTitle>Busy in here</AlertTitle>
                 <AlertDescription>
-                  With more than {MESH_LIMIT} people, video and sound may start to struggle.
+                  With more than {MESH_LIMIT} people, video and sound may start
+                  to struggle.
                 </AlertDescription>
               </div>
             </Alert>
@@ -566,8 +610,8 @@ export function CallRoomPage(): React.JSX.Element {
               <div>
                 <AlertTitle>Hang on, reconnecting…</AlertTitle>
                 <AlertDescription>
-                  Your connection is a bit wobbly. The call is still going — we'll catch you up
-                  as soon as it steadies.
+                  Your connection is a bit wobbly. The call is still going —
+                  we'll catch you up as soon as it steadies.
                 </AlertDescription>
               </div>
             </Alert>
@@ -576,8 +620,8 @@ export function CallRoomPage(): React.JSX.Element {
 
         <aside
           className={cn(
-            'w-full shrink-0 flex-col gap-4 lg:flex lg:w-80',
-            rosterOpenOnMobile ? 'flex' : 'hidden lg:flex',
+            "w-full shrink-0 flex-col gap-4 lg:flex lg:w-80",
+            rosterOpenOnMobile ? "flex" : "hidden lg:flex",
           )}
         >
           {/* One panel at a time — three side by side would crowd the video. */}
@@ -588,9 +632,24 @@ export function CallRoomPage(): React.JSX.Element {
           >
             {(
               [
-                { key: 'participants', label: 'People', icon: Users, badge: participants.length },
-                { key: 'captions', label: 'Captions', icon: Captions, badge: 0 },
-                { key: 'activity', label: 'Activity', icon: History, badge: activity.unseen },
+                {
+                  key: "participants",
+                  label: "People",
+                  icon: Users,
+                  badge: participants.length,
+                },
+                {
+                  key: "captions",
+                  label: "Captions",
+                  icon: Captions,
+                  badge: 0,
+                },
+                {
+                  key: "activity",
+                  label: "Activity",
+                  icon: History,
+                  badge: activity.unseen,
+                },
               ] as const
             ).map(({ key, label, icon: Icon, badge }) => (
               <button
@@ -600,25 +659,29 @@ export function CallRoomPage(): React.JSX.Element {
                 aria-selected={sidePanel === key}
                 onClick={() => {
                   setSidePanel(key);
-                  if (key === 'activity') activity.markSeen();
+                  if (key === "activity") activity.markSeen();
                 }}
                 className={cn(
-                  'relative inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors',
-                  sidePanel === key ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground',
+                  "relative inline-flex items-center justify-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-medium transition-colors",
+                  sidePanel === key
+                    ? "bg-card text-foreground shadow-xs"
+                    : "text-muted-foreground",
                 )}
               >
                 <Icon className="size-4" aria-hidden="true" />
-                <span className="hidden sm:inline lg:hidden xl:inline">{label}</span>
-                {badge > 0 && key !== 'participants' ? (
+                <span className="hidden sm:inline lg:hidden xl:inline">
+                  {label}
+                </span>
+                {badge > 0 && key !== "participants" ? (
                   <span className="absolute -right-0.5 -top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[0.6rem] font-semibold text-primary-foreground">
-                    {badge > 9 ? '9+' : badge}
+                    {badge > 9 ? "9+" : badge}
                   </span>
                 ) : null}
               </button>
             ))}
           </div>
 
-          {sidePanel === 'participants' ? (
+          {sidePanel === "participants" ? (
             <CallPeoplePanel
               callId={callId}
               participants={participants}
@@ -630,11 +693,13 @@ export function CallRoomPage(): React.JSX.Element {
             />
           ) : null}
 
-          {sidePanel === 'captions' ? (
+          {sidePanel === "captions" ? (
             <LiveCaptionPanel captions={captions} selfUserId={user?.id} />
           ) : null}
 
-          {sidePanel === 'activity' ? <ActivityPanel entries={activity.entries} /> : null}
+          {sidePanel === "activity" ? (
+            <ActivityPanel entries={activity.entries} />
+          ) : null}
         </aside>
       </main>
 
@@ -644,19 +709,19 @@ export function CallRoomPage(): React.JSX.Element {
           cameraOn={media.cameraOn}
           onToggleMic={media.toggleMic}
           onToggleCamera={media.toggleCamera}
-          onLeave={() => setConfirming('leave')}
-          onEndForAll={() => setConfirming('end')}
+          onLeave={() => setConfirming("leave")}
+          onEndForAll={() => setConfirming("end")}
           leaving={leaveCall.isPending}
           ending={endCall.isPending}
           canEndForAll={isOrganizer}
           participantCount={participants.length}
-          onToggleRoster={() => setRosterOpenOnMobile((open) => !open)}
+          onToggleRoster={() => setRosterOpenOnMobile(open => !open)}
         />
       </footer>
 
       <ConfirmDialog
-        open={confirming === 'leave'}
-        onOpenChange={(open) => (open ? undefined : setConfirming(null))}
+        open={confirming === "leave"}
+        onOpenChange={open => (open ? undefined : setConfirming(null))}
         title="Leave this call?"
         confirmLabel="Leave call"
         cancelLabel="Stay"
@@ -673,8 +738,8 @@ export function CallRoomPage(): React.JSX.Element {
       />
 
       <ConfirmDialog
-        open={confirming === 'end'}
-        onOpenChange={(open) => (open ? undefined : setConfirming(null))}
+        open={confirming === "end"}
+        onOpenChange={open => (open ? undefined : setConfirming(null))}
         title="End the call for everyone?"
         destructive
         confirmLabel="End for everyone"
