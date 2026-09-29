@@ -4,21 +4,29 @@ import {
   useQuery,
   useQueryClient,
   type InfiniteData,
-} from '@tanstack/react-query';
-import { queryKeys } from '@/app/query-client';
-import { invitationsApi, usersApi, type CreateInvitationInput } from '@/lib/api';
+} from "@tanstack/react-query";
+import { queryKeys } from "@/app/queryClient";
+import {
+  invitationsApi,
+  usersApi,
+  type CreateInvitationInput,
+} from "@/lib/api";
 import type {
   Invitation,
   ListInvitationsQuery,
   PaginatedResponse,
   RevokedInvitation,
   User,
-} from '@/lib/api/types';
+} from "@/lib/api/types";
 
-export function useInvitations(callId: string | undefined, query: ListInvitationsQuery = {}) {
+export function useInvitations(
+  callId: string | undefined,
+  query: ListInvitationsQuery = {},
+) {
   return useQuery<PaginatedResponse<Invitation>>({
-    queryKey: queryKeys.invitations(callId ?? '', query),
-    queryFn: ({ signal }) => invitationsApi.listForCall(callId as string, query, signal),
+    queryKey: queryKeys.invitations(callId ?? "", query),
+    queryFn: ({ signal }) =>
+      invitationsApi.listForCall(callId as string, query, signal),
     enabled: Boolean(callId),
   });
 }
@@ -26,7 +34,10 @@ export function useInvitations(callId: string | undefined, query: ListInvitation
 /** Paged invitations, for a call with a long participant list. */
 export function useInfiniteInvitations(callId: string | undefined, limit = 25) {
   return useInfiniteQuery({
-    queryKey: [...queryKeys.invitations(callId ?? '', { limit }), 'infinite'] as const,
+    queryKey: [
+      ...queryKeys.invitations(callId ?? "", { limit }),
+      "infinite",
+    ] as const,
     queryFn: ({ signal, pageParam }) =>
       invitationsApi.listForCall(
         callId as string,
@@ -34,7 +45,8 @@ export function useInfiniteInvitations(callId: string | undefined, limit = 25) {
         signal,
       ),
     initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage: PaginatedResponse<Invitation>) => lastPage.nextCursor ?? undefined,
+    getNextPageParam: (lastPage: PaginatedResponse<Invitation>) =>
+      lastPage.nextCursor ?? undefined,
     enabled: Boolean(callId),
   });
 }
@@ -43,10 +55,15 @@ export function useCreateInvitation(callId: string) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (input: CreateInvitationInput) => invitationsApi.create(callId, input),
+    mutationFn: (input: CreateInvitationInput) =>
+      invitationsApi.create(callId, input),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['call', callId, 'invitations'] });
-      void queryClient.invalidateQueries({ queryKey: ['call', callId, 'audit'] });
+      void queryClient.invalidateQueries({
+        queryKey: ["call", callId, "invitations"],
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["call", callId, "audit"],
+      });
     },
   });
 }
@@ -73,14 +90,15 @@ function applyRevocation(result: RevokedInvitation) {
   });
 
   return (previous: unknown): unknown => {
-    if (!previous || typeof previous !== 'object') return previous;
+    if (!previous || typeof previous !== "object") return previous;
 
-    if ('pages' in previous) {
+    if ("pages" in previous) {
       const infinite = previous as InfiniteData<PaginatedResponse<Invitation>>;
       return { ...infinite, pages: infinite.pages.map(patchPage) };
     }
 
-    if ('items' in previous) return patchPage(previous as PaginatedResponse<Invitation>);
+    if ("items" in previous)
+      return patchPage(previous as PaginatedResponse<Invitation>);
 
     return previous;
   };
@@ -91,15 +109,15 @@ export function useRevokeInvitation(callId: string) {
 
   return useMutation<RevokedInvitation, unknown, string>({
     mutationFn: (invitationId: string) => invitationsApi.revoke(invitationId),
-    onSuccess: (result) => {
+    onSuccess: result => {
       queryClient.setQueriesData(
-        { queryKey: ['call', callId, 'invitations'] },
+        { queryKey: ["call", callId, "invitations"] },
         applyRevocation(result),
       );
     },
     onSettled: () => {
       // Attendance and audit both change when access is withdrawn.
-      void queryClient.invalidateQueries({ queryKey: ['call', callId] });
+      void queryClient.invalidateQueries({ queryKey: ["call", callId] });
     },
   });
 }
@@ -109,7 +127,7 @@ export function useUserLookup(email: string, enabled: boolean) {
   return useQuery<User | null>({
     queryKey: queryKeys.userLookup(email),
     queryFn: ({ signal }) => usersApi.lookupByEmail(email, signal),
-    enabled: enabled && email.includes('@'),
+    enabled: enabled && email.includes("@"),
     staleTime: 60_000,
     retry: false,
   });

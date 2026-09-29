@@ -1,15 +1,14 @@
-import { Check, Copy } from 'lucide-react';
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Check, Copy } from "lucide-react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
-/** Copies a value without ever rendering it into a log or the page title. */
-export function CopyButton({
-  value,
-  label = 'Copy',
-}: {
+type CopyButtonProps = {
   value: string;
   label?: string;
-}): React.JSX.Element {
+};
+
+/** Copies a value without ever rendering it into a log or the page title. */
+export function CopyButton({ value, label = "Copy" }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   return (
@@ -25,7 +24,7 @@ export function CopyButton({
       }}
     >
       {copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}
-      {copied ? 'Copied' : label}
+      {copied ? "Copied" : label}
     </Button>
   );
 }

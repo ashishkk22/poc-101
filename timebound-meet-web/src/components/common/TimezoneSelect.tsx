@@ -53,6 +53,14 @@ function buildOptions(): ZoneOption[] {
     );
 }
 
+type TimezoneSelectProps = {
+  value: string;
+  onChange: (timeZone: string) => void;
+  id?: string;
+  disabled?: boolean;
+  "aria-describedby"?: string;
+};
+
 /**
  * Picking the zone a meeting is scheduled in.
  *
@@ -68,13 +76,7 @@ export function TimezoneSelect({
   id,
   disabled,
   "aria-describedby": describedBy,
-}: {
-  value: string;
-  onChange: (timeZone: string) => void;
-  id?: string;
-  disabled?: boolean;
-  "aria-describedby"?: string;
-}): React.JSX.Element {
+}: TimezoneSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlighted, setHighlighted] = useState(0);

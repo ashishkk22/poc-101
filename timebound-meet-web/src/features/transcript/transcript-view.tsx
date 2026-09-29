@@ -1,59 +1,80 @@
-import { CheckCircle2, Clock, FileText, Trash2, TriangleAlert } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { ErrorState } from '@/components/common/error-state';
-import { LoadingState } from '@/components/common/loading-state';
-import { formatDateTime } from '@/lib/date/format';
-import type { Transcript, TranscriptStatus } from '@/lib/api/types';
-import { useTranscript } from './queries';
+import {
+  CheckCircle2,
+  Clock,
+  FileText,
+  Trash2,
+  TriangleAlert,
+} from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/common/ErrorState";
+import { LoadingState } from "@/components/common/LoadingState";
+import { formatDateTime } from "@/lib/date/format";
+import type { Transcript, TranscriptStatus } from "@/lib/api/types";
+import { useTranscript } from "./queries";
 
 const STATUS: Record<
   TranscriptStatus,
-  { label: string; variant: 'default' | 'neutral' | 'success' | 'warning' | 'destructive' }
+  {
+    label: string;
+    variant: "default" | "neutral" | "success" | "warning" | "destructive";
+  }
 > = {
-  PENDING: { label: 'Queued', variant: 'warning' },
-  PROCESSING: { label: 'Processing', variant: 'warning' },
-  READY: { label: 'Ready', variant: 'success' },
-  FAILED: { label: 'Failed', variant: 'destructive' },
-  DELETED: { label: 'Deleted', variant: 'neutral' },
+  PENDING: { label: "Queued", variant: "warning" },
+  PROCESSING: { label: "Processing", variant: "warning" },
+  READY: { label: "Ready", variant: "success" },
+  FAILED: { label: "Failed", variant: "destructive" },
+  DELETED: { label: "Deleted", variant: "neutral" },
 };
 
-export function TranscriptStatusBadge({ status }: { status: TranscriptStatus }): React.JSX.Element {
-  const entry = STATUS[status] ?? { label: status, variant: 'neutral' as const };
+export function TranscriptStatusBadge({
+  status,
+}: {
+  status: TranscriptStatus;
+}): React.JSX.Element {
+  const entry = STATUS[status] ?? {
+    label: status,
+    variant: "neutral" as const,
+  };
   return <Badge variant={entry.variant}>{entry.label}</Badge>;
 }
 
-function TranscriptBody({ transcript }: { transcript: Transcript }): React.JSX.Element {
+function TranscriptBody({
+  transcript,
+}: {
+  transcript: Transcript;
+}): React.JSX.Element {
   switch (transcript.status) {
-    case 'PENDING':
-    case 'PROCESSING':
+    case "PENDING":
+    case "PROCESSING":
       return (
         <Alert variant="info">
           <Clock aria-hidden="true" />
           <div>
             <AlertTitle>We're writing this up</AlertTitle>
             <AlertDescription>
-              It takes a minute or two. This page updates on its own, so feel free to wander off.
+              It takes a minute or two. This page updates on its own, so feel
+              free to wander off.
             </AlertDescription>
           </div>
         </Alert>
       );
 
-    case 'FAILED':
+    case "FAILED":
       return (
         <Alert variant="destructive">
           <TriangleAlert aria-hidden="true" />
           <div>
             <AlertTitle>We couldn't write this one up</AlertTitle>
             <AlertDescription>
-              Something went wrong turning the audio into text. Everything else about the
-              meeting is still here.
+              Something went wrong turning the audio into text. Everything else
+              about the meeting is still here.
             </AlertDescription>
           </div>
         </Alert>
       );
 
-    case 'DELETED':
+    case "DELETED":
       return (
         <Alert variant="warning">
           <Trash2 aria-hidden="true" />
@@ -66,7 +87,7 @@ function TranscriptBody({ transcript }: { transcript: Transcript }): React.JSX.E
         </Alert>
       );
 
-    case 'READY':
+    case "READY":
     default:
       if (!transcript.content) {
         return (
@@ -88,7 +109,9 @@ function TranscriptBody({ transcript }: { transcript: Transcript }): React.JSX.E
             <CheckCircle2 aria-hidden="true" />
             <AlertDescription>
               Generated {formatDateTime(transcript.generatedAt)}
-              {transcript.expiresAt ? ` · retained until ${formatDateTime(transcript.expiresAt)}` : ''}
+              {transcript.expiresAt
+                ? ` · retained until ${formatDateTime(transcript.expiresAt)}`
+                : ""}
             </AlertDescription>
           </Alert>
           <article className="rounded-lg border border-border bg-card p-5">
@@ -101,12 +124,22 @@ function TranscriptBody({ transcript }: { transcript: Transcript }): React.JSX.E
   }
 }
 
-export function TranscriptView({ callId }: { callId: string }): React.JSX.Element {
+export function TranscriptView({
+  callId,
+}: {
+  callId: string;
+}): React.JSX.Element {
   const transcript = useTranscript(callId);
 
-  if (transcript.isPending) return <LoadingState label="Loading transcript…" rows={2} />;
+  if (transcript.isPending)
+    return <LoadingState label="Loading transcript…" rows={2} />;
   if (transcript.isError) {
-    return <ErrorState error={transcript.error} onRetry={() => void transcript.refetch()} />;
+    return (
+      <ErrorState
+        error={transcript.error}
+        onRetry={() => void transcript.refetch()}
+      />
+    );
   }
 
   return (

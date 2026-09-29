@@ -1,5 +1,27 @@
-import { LogOut, Mic, MicOff, PhoneOff, Users, Video, VideoOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import {
+  LogOut,
+  Mic,
+  MicOff,
+  PhoneOff,
+  Users,
+  Video,
+  VideoOff,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+type CallControlsProps = {
+  micOn: boolean;
+  cameraOn: boolean;
+  onToggleMic: () => void;
+  onToggleCamera: () => void;
+  onLeave: () => void;
+  onEndForAll?: () => void;
+  leaving: boolean;
+  ending?: boolean;
+  canEndForAll: boolean;
+  participantCount: number;
+  onToggleRoster?: () => void;
+};
 
 /**
  * Local media toggles, plus the two ways out.
@@ -21,19 +43,7 @@ export function CallControls({
   canEndForAll,
   participantCount,
   onToggleRoster,
-}: {
-  micOn: boolean;
-  cameraOn: boolean;
-  onToggleMic: () => void;
-  onToggleCamera: () => void;
-  onLeave: () => void;
-  onEndForAll?: () => void;
-  leaving: boolean;
-  ending?: boolean;
-  canEndForAll: boolean;
-  participantCount: number;
-  onToggleRoster?: () => void;
-}): React.JSX.Element {
+}: CallControlsProps) {
   return (
     <div
       role="toolbar"
@@ -41,23 +51,29 @@ export function CallControls({
       className="flex flex-wrap items-center justify-center gap-2 rounded-xl border border-border bg-card p-3"
     >
       <Button
-        variant={micOn ? 'outline' : 'secondary'}
+        variant={micOn ? "outline" : "secondary"}
         onClick={onToggleMic}
         aria-pressed={!micOn}
-        aria-label={micOn ? 'Mute microphone' : 'Unmute microphone'}
+        aria-label={micOn ? "Mute microphone" : "Unmute microphone"}
       >
         {micOn ? <Mic aria-hidden="true" /> : <MicOff aria-hidden="true" />}
-        <span className="hidden sm:inline">{micOn ? 'Mute' : 'Unmute'}</span>
+        <span className="hidden sm:inline">{micOn ? "Mute" : "Unmute"}</span>
       </Button>
 
       <Button
-        variant={cameraOn ? 'outline' : 'secondary'}
+        variant={cameraOn ? "outline" : "secondary"}
         onClick={onToggleCamera}
         aria-pressed={!cameraOn}
-        aria-label={cameraOn ? 'Turn camera off' : 'Turn camera on'}
+        aria-label={cameraOn ? "Turn camera off" : "Turn camera on"}
       >
-        {cameraOn ? <Video aria-hidden="true" /> : <VideoOff aria-hidden="true" />}
-        <span className="hidden sm:inline">{cameraOn ? 'Camera' : 'Camera off'}</span>
+        {cameraOn ? (
+          <Video aria-hidden="true" />
+        ) : (
+          <VideoOff aria-hidden="true" />
+        )}
+        <span className="hidden sm:inline">
+          {cameraOn ? "Camera" : "Camera off"}
+        </span>
       </Button>
 
       {onToggleRoster ? (
@@ -72,7 +88,10 @@ export function CallControls({
         </Button>
       ) : null}
 
-      <span className="mx-1 hidden h-6 w-px bg-border sm:block" aria-hidden="true" />
+      <span
+        className="mx-1 hidden h-6 w-px bg-border sm:block"
+        aria-hidden="true"
+      />
 
       <Button variant="outline" onClick={onLeave} loading={leaving}>
         {leaving ? null : <LogOut aria-hidden="true" />}

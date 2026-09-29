@@ -1,25 +1,35 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { ArrowRight, Clock, Globe, MailCheck, ShieldOff, UserRound } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { EmptyState } from '@/components/common/empty-state';
-import { ErrorState } from '@/components/common/error-state';
-import { LoadMore } from '@/components/common/load-more';
-import { LoadingState } from '@/components/common/loading-state';
-import { invitationsApi } from '@/lib/api';
-import type { MyInvitation, PaginatedResponse } from '@/lib/api/types';
-import { formatRelative, formatWindow, parse } from '@/lib/date/format';
-import { CallStatusBadge } from '@/features/calls';
-import { InvitationStatusBadge } from './invitation-status-badge';
+import { useInfiniteQuery } from "@tanstack/react-query";
+import {
+  ArrowRight,
+  Clock,
+  Globe,
+  MailCheck,
+  ShieldOff,
+  UserRound,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { LoadMore } from "@/components/common/LoadMore";
+import { LoadingState } from "@/components/common/LoadingState";
+import { invitationsApi } from "@/lib/api";
+import type { MyInvitation, PaginatedResponse } from "@/lib/api/types";
+import { formatRelative, formatWindow, parse } from "@/lib/date/format";
+import { CallStatusBadge } from "@/features/calls";
+import { InvitationStatusBadge } from "./invitation-status-badge";
 
 /** The caller's own invitations, newest first. */
 export function useMyInvitations(limit = 25) {
   return useInfiniteQuery({
-    queryKey: ['invitations', 'mine', { limit }] as const,
+    queryKey: ["invitations", "mine", { limit }] as const,
     queryFn: ({ signal, pageParam }) =>
-      invitationsApi.listMine({ limit, ...(pageParam ? { cursor: pageParam } : {}) }, signal),
+      invitationsApi.listMine(
+        { limit, ...(pageParam ? { cursor: pageParam } : {}) },
+        signal,
+      ),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage: PaginatedResponse<MyInvitation>) =>
       lastPage.nextCursor ?? undefined,
@@ -33,33 +43,44 @@ export function useMyInvitations(limit = 25) {
  * everything when they actually try to enter, and its answer is the one that
  * counts.
  */
-function joinability(invitation: MyInvitation): { canJoin: boolean; note: string } {
+function joinability(invitation: MyInvitation): {
+  canJoin: boolean;
+  note: string;
+} {
   const { call, status, expiresAt } = invitation;
 
-  if (status === 'REVOKED') return { canJoin: false, note: 'The host took this one back.' };
-  if (status === 'EXPIRED') return { canJoin: false, note: 'This invite has run out.' };
-  if (call.status === 'CANCELLED') return { canJoin: false, note: 'The host called this one off.' };
-  if (call.status === 'ENDED') return { canJoin: false, note: 'This one has wrapped up.' };
+  if (status === "REVOKED")
+    return { canJoin: false, note: "The host took this one back." };
+  if (status === "EXPIRED")
+    return { canJoin: false, note: "This invite has run out." };
+  if (call.status === "CANCELLED")
+    return { canJoin: false, note: "The host called this one off." };
+  if (call.status === "ENDED")
+    return { canJoin: false, note: "This one has wrapped up." };
 
   const expiry = parse(expiresAt);
   if (expiry && expiry.getTime() <= Date.now()) {
-    return { canJoin: false, note: 'This invite has run out.' };
+    return { canJoin: false, note: "This invite has run out." };
   }
 
   const start = parse(call.scheduledStart);
   if (start && start.getTime() > Date.now()) {
-    return { canJoin: true, note: 'You can go in early and wait.' };
+    return { canJoin: true, note: "You can go in early and wait." };
   }
 
-  return { canJoin: true, note: 'Open now — come on in.' };
+  return { canJoin: true, note: "Open now — come on in." };
 }
 
-function InvitationCard({ invitation }: { invitation: MyInvitation }): React.JSX.Element {
+function InvitationCard({
+  invitation,
+}: {
+  invitation: MyInvitation;
+}): React.JSX.Element {
   const { call } = invitation;
   const { canJoin, note } = joinability(invitation);
 
   return (
-    <Card className={canJoin ? 'border-primary/30' : undefined}>
+    <Card className={canJoin ? "border-primary/30" : undefined}>
       <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0 space-y-1.5">
           <div className="flex flex-wrap items-center gap-2">
@@ -90,12 +111,16 @@ function InvitationCard({ invitation }: { invitation: MyInvitation }): React.JSX
 
           <p
             className={`flex items-center gap-1.5 text-xs ${
-              canJoin ? 'text-muted-foreground' : 'text-destructive'
+              canJoin ? "text-muted-foreground" : "text-destructive"
             }`}
           >
-            {canJoin ? null : <ShieldOff className="size-3" aria-hidden="true" />}
+            {canJoin ? null : (
+              <ShieldOff className="size-3" aria-hidden="true" />
+            )}
             {note}
-            {canJoin ? ` · access ends ${formatRelative(invitation.expiresAt)}` : ''}
+            {canJoin
+              ? ` · access ends ${formatRelative(invitation.expiresAt)}`
+              : ""}
           </p>
         </div>
 
@@ -120,12 +145,18 @@ function InvitationCard({ invitation }: { invitation: MyInvitation }): React.JSX
 export function MyInvitationsList(): React.JSX.Element {
   const invitations = useMyInvitations();
 
-  if (invitations.isPending) return <LoadingState label="Loading your invitations…" />;
+  if (invitations.isPending)
+    return <LoadingState label="Loading your invitations…" />;
   if (invitations.isError) {
-    return <ErrorState error={invitations.error} onRetry={() => void invitations.refetch()} />;
+    return (
+      <ErrorState
+        error={invitations.error}
+        onRetry={() => void invitations.refetch()}
+      />
+    );
   }
 
-  const items = invitations.data.pages.flatMap((page) => page.items);
+  const items = invitations.data.pages.flatMap(page => page.items);
 
   if (items.length === 0) {
     return (
@@ -139,7 +170,7 @@ export function MyInvitationsList(): React.JSX.Element {
 
   return (
     <div className="space-y-3">
-      {items.map((invitation) => (
+      {items.map(invitation => (
         <InvitationCard key={invitation.id} invitation={invitation} />
       ))}
       <LoadMore

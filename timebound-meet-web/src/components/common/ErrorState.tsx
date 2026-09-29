@@ -1,7 +1,13 @@
-import { AlertTriangle, RefreshCw } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { toDisplayError } from '@/lib/errors';
+import { AlertTriangle, RefreshCw } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { toDisplayError } from "@/lib/errors";
+
+type ErrorStateProps = {
+  error: unknown;
+  onRetry?: () => void;
+  retrying?: boolean;
+};
 
 /**
  * The only component that renders a backend failure.
@@ -13,11 +19,7 @@ export function ErrorState({
   error,
   onRetry,
   retrying = false,
-}: {
-  error: unknown;
-  onRetry?: () => void;
-  retrying?: boolean;
-}): React.JSX.Element {
+}: ErrorStateProps) {
   const display = toDisplayError(error);
 
   return (
@@ -32,7 +34,12 @@ export function ErrorState({
           </p>
         ) : null}
         {onRetry ? (
-          <Button variant="outline" size="sm" onClick={onRetry} loading={retrying}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onRetry}
+            loading={retrying}
+          >
             {retrying ? null : <RefreshCw aria-hidden="true" />}
             Try again
           </Button>

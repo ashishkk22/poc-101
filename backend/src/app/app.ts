@@ -7,7 +7,7 @@ import { allowedOrigins, isProduction } from '../config/env.js';
 import { auth } from '../modules/auth/auth.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFoundHandler } from './middleware/not-found.js';
-import { rateLimit } from './middleware/rate-limit.js';
+import { authRateLimit, rateLimit } from './middleware/rate-limit.js';
 import { requestIdMiddleware } from './middleware/request-id.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { healthRouter } from './health.routes.js';
@@ -69,7 +69,7 @@ export function createApp(): Express {
 
   // Better Auth mounts before the JSON body parser: it consumes the raw body
   // itself. Express 5 requires the named splat form for a catch-all.
-  app.all(`${AUTH_BASE_PATH}/*splat`, rateLimit('auth'), toNodeHandler(auth));
+  app.all(`${AUTH_BASE_PATH}/*splat`, authRateLimit(), toNodeHandler(auth));
 
   app.use(express.json({ limit: '100kb' }));
   app.use(express.urlencoded({ extended: false, limit: '100kb' }));

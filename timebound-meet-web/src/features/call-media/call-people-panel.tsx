@@ -1,16 +1,16 @@
-import { Crown, ShieldOff, UserPlus, Users } from 'lucide-react';
-import { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ConfirmDialog } from '@/components/common/confirm-dialog';
+import { Crown, ShieldOff, UserPlus, Users } from "lucide-react";
+import { useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
 import {
   InviteParticipantDialog,
   useInfiniteInvitations,
   useRevokeInvitation,
-} from '@/features/invitations';
-import type { CallParticipant, Invitation } from '@/lib/api/types';
-import { formatTime } from '@/lib/date/format';
-import { notify } from '@/lib/toast';
+} from "@/features/invitations";
+import type { CallParticipant, Invitation } from "@/lib/api/types";
+import { formatTime } from "@/lib/date/format";
+import { notify } from "@/lib/toast";
 
 /**
  * Who is here, who was invited, and what the host can do about it — without
@@ -43,17 +43,19 @@ export function CallPeoplePanel({
   const revoke = useRevokeInvitation(callId);
   const [pendingRevoke, setPendingRevoke] = useState<Invitation | null>(null);
 
-  const invited = invitations.data?.pages.flatMap((page) => page.items) ?? [];
-  const present = new Set(participants.map((person) => person.id));
+  const invited = invitations.data?.pages.flatMap(page => page.items) ?? [];
+  const present = new Set(participants.map(person => person.id));
 
   // Someone invited who has not arrived, or has stepped out.
   const awaited = invited.filter(
-    (invitation) => invitation.status === 'ACTIVE' && !present.has(invitation.participantId),
+    invitation =>
+      invitation.status === "ACTIVE" && !present.has(invitation.participantId),
   );
 
   function invitationFor(userId: string): Invitation | undefined {
     return invited.find(
-      (invitation) => invitation.participantId === userId && invitation.status === 'ACTIVE',
+      invitation =>
+        invitation.participantId === userId && invitation.status === "ACTIVE",
     );
   }
 
@@ -72,13 +74,15 @@ export function CallPeoplePanel({
           <InviteParticipantDialog
             compact
             callId={callId}
-            organizerId={currentUserId ?? ''}
+            organizerId={currentUserId ?? ""}
             existingInvitations={invited}
             {...(inviteOpen !== undefined ? { open: inviteOpen } : {})}
-            {...(onInviteOpenChange ? { onOpenChange: onInviteOpenChange } : {})}
+            {...(onInviteOpenChange
+              ? { onOpenChange: onInviteOpenChange }
+              : {})}
           />
         ) : (
-          <Badge variant="neutral">{loading ? '…' : participants.length}</Badge>
+          <Badge variant="neutral">{loading ? "…" : participants.length}</Badge>
         )}
       </header>
 
@@ -88,25 +92,38 @@ export function CallPeoplePanel({
         </p>
 
         <ul className="divide-y divide-border" aria-live="polite">
-          {participants.map((person) => {
-            const invitation = isOrganizer ? invitationFor(person.id) : undefined;
-            const revoking = revoke.isPending && revoke.variables === invitation?.id;
+          {participants.map(person => {
+            const invitation = isOrganizer
+              ? invitationFor(person.id)
+              : undefined;
+            const revoking =
+              revoke.isPending && revoke.variables === invitation?.id;
 
             return (
-              <li key={person.id} className="flex items-center justify-between gap-2 px-4 py-2.5">
+              <li
+                key={person.id}
+                className="flex items-center justify-between gap-2 px-4 py-2.5"
+              >
                 <div className="min-w-0">
                   <p className="flex items-center gap-1.5 truncate text-sm font-medium">
                     {person.name}
                     {person.id === currentUserId ? (
-                      <span className="text-xs font-normal text-muted-foreground">(you)</span>
+                      <span className="text-xs font-normal text-muted-foreground">
+                        (you)
+                      </span>
                     ) : null}
                     {person.isOrganizer ? (
-                      <Crown className="size-3 text-warning" aria-label="Host" />
+                      <Crown
+                        className="size-3 text-warning"
+                        aria-label="Host"
+                      />
                     ) : null}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     joined {formatTime(person.joinedAt)}
-                    {person.connections > 1 ? ` · ${person.connections} devices` : ''}
+                    {person.connections > 1
+                      ? ` · ${person.connections} devices`
+                      : ""}
                   </p>
                 </div>
 
@@ -125,14 +142,19 @@ export function CallPeoplePanel({
                     Remove
                   </Button>
                 ) : (
-                  <span className="size-2 shrink-0 rounded-full bg-success" aria-label="Here" />
+                  <span
+                    className="size-2 shrink-0 rounded-full bg-success"
+                    aria-label="Here"
+                  />
                 )}
               </li>
             );
           })}
 
           {participants.length === 0 && !loading ? (
-            <li className="px-4 py-4 text-sm text-muted-foreground">Nobody else here just yet.</li>
+            <li className="px-4 py-4 text-sm text-muted-foreground">
+              Nobody else here just yet.
+            </li>
           ) : null}
         </ul>
 
@@ -142,8 +164,9 @@ export function CallPeoplePanel({
               Invited · {awaited.length}
             </p>
             <ul className="divide-y divide-border">
-              {awaited.map((invitation) => {
-                const revoking = revoke.isPending && revoke.variables === invitation.id;
+              {awaited.map(invitation => {
+                const revoking =
+                  revoke.isPending && revoke.variables === invitation.id;
 
                 return (
                   <li
@@ -152,9 +175,11 @@ export function CallPeoplePanel({
                   >
                     <div className="min-w-0">
                       <p className="truncate text-sm">
-                        {invitation.participant?.name ?? 'Invited guest'}
+                        {invitation.participant?.name ?? "Invited guest"}
                       </p>
-                      <p className="text-xs text-muted-foreground">Not here yet</p>
+                      <p className="text-xs text-muted-foreground">
+                        Not here yet
+                      </p>
                     </div>
 
                     <Button
@@ -164,7 +189,7 @@ export function CallPeoplePanel({
                       loading={revoking}
                       disabled={revoke.isPending}
                       onClick={() => setPendingRevoke(invitation)}
-                      aria-label={`Take back ${invitation.participant?.name ?? 'this'} invite`}
+                      aria-label={`Take back ${invitation.participant?.name ?? "this"} invite`}
                     >
                       Uninvite
                     </Button>
@@ -185,23 +210,28 @@ export function CallPeoplePanel({
 
       <ConfirmDialog
         open={Boolean(pendingRevoke)}
-        onOpenChange={(open) => (open ? undefined : setPendingRevoke(null))}
+        onOpenChange={open => (open ? undefined : setPendingRevoke(null))}
         title="Take back this invite?"
         destructive
         pending={revoke.isPending}
         confirmLabel="Take it back"
         description={
           <span>
-            {pendingRevoke?.participant?.name ?? 'They'} won't be able to join any more, and if
-            they're in the call right now, they'll drop out within seconds.
+            {pendingRevoke?.participant?.name ?? "They"} won't be able to join
+            any more, and if they're in the call right now, they'll drop out
+            within seconds.
           </span>
         }
         onConfirm={() => {
           if (!pendingRevoke) return;
-          const name = pendingRevoke.participant?.name ?? 'They';
+          const name = pendingRevoke.participant?.name ?? "They";
 
           revoke.mutate(pendingRevoke.id, {
-            onSuccess: () => notify.success('Invite taken back', `${name} can't join any more.`),
+            onSuccess: () =>
+              notify.success(
+                "Invite taken back",
+                `${name} can't join any more.`,
+              ),
             onError: notify.error,
             onSettled: () => setPendingRevoke(null),
           });

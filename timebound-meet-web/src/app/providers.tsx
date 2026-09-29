@@ -1,24 +1,26 @@
-import { QueryClientProvider } from '@tanstack/react-query';
-import { useState } from 'react';
-import type { ReactNode } from 'react';
-import { Toaster } from 'sonner';
-import { ErrorBoundary } from '@/components/common/error-boundary';
-import { CallSessionProvider } from '@/features/join';
-import { useCurrentUser } from '@/features/auth';
-import { RealtimeProvider } from '@/lib/realtime';
-import { ThemeProvider } from '@/lib/theme/theme-provider';
-import { createQueryClient } from './query-client';
+import { QueryClientProvider } from "@tanstack/react-query";
+import { useState } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
+import { Toaster } from "sonner";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { CallSessionProvider } from "@/features/join";
+import { useCurrentUser } from "@/features/auth";
+import { RealtimeProvider } from "@/lib/realtime";
+import { ThemeProvider } from "@/lib/theme/theme-provider";
+import { createQueryClient } from "./queryClient";
 
 /**
  * The socket opens only once the backend has confirmed a session, and closes
  * when it goes away — a realtime connection never outlives its session.
  */
-function RealtimeGate({ children }: { children: ReactNode }): React.JSX.Element {
+function RealtimeGate({ children }: PropsWithChildren) {
   const { isAuthenticated } = useCurrentUser();
-  return <RealtimeProvider enabled={isAuthenticated}>{children}</RealtimeProvider>;
+  return (
+    <RealtimeProvider enabled={isAuthenticated}>{children}</RealtimeProvider>
+  );
 }
 
-export function AppProviders({ children }: { children: ReactNode }): React.JSX.Element {
+export function AppProviders({ children }: PropsWithChildren) {
   const [queryClient] = useState(createQueryClient);
 
   return (

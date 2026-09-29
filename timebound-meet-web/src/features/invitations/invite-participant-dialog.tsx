@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { CircleAlert, Link2, Search, UserPlus } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
+import { useState } from "react";
+import { CircleAlert, Link2, Search, UserPlus } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -10,15 +10,15 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { CopyButton } from '@/components/common/copy-button';
-import { ErrorState } from '@/components/common/error-state';
-import { formatDateTime } from '@/lib/date/format';
-import { notify } from '@/lib/toast';
-import type { CreatedInvitation, Invitation, User } from '@/lib/api/types';
-import { useCreateInvitation, useUserLookup } from './queries';
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { CopyButton } from "@/components/common/CopyButton";
+import { ErrorState } from "@/components/common/ErrorState";
+import { formatDateTime } from "@/lib/date/format";
+import { notify } from "@/lib/toast";
+import type { CreatedInvitation, Invitation, User } from "@/lib/api/types";
+import { useCreateInvitation, useUserLookup } from "./queries";
 
 /**
  * Two steps, deliberately: resolve the person, then issue the invitation.
@@ -61,8 +61,8 @@ export function InviteParticipantDialog({
     if (!isControlled) setUncontrolledOpen(next);
     onOpenChange?.(next);
   };
-  const [email, setEmail] = useState('');
-  const [searchedEmail, setSearchedEmail] = useState('');
+  const [email, setEmail] = useState("");
+  const [searchedEmail, setSearchedEmail] = useState("");
   const [issued, setIssued] = useState<CreatedInvitation | null>(null);
 
   const lookup = useUserLookup(searchedEmail, searchedEmail.length > 0);
@@ -73,14 +73,16 @@ export function InviteParticipantDialog({
   // The backend enforces both of these; catching them here turns a rejection
   // into guidance the organizer can act on before submitting.
   const alreadyInvited = found
-    ? existingInvitations.find((invitation) => invitation.participantId === found.id)
+    ? existingInvitations.find(
+        invitation => invitation.participantId === found.id,
+      )
     : undefined;
   const isOrganizer = Boolean(found && found.id === organizerId);
   const blocked = Boolean(alreadyInvited) || isOrganizer;
 
   function reset(): void {
-    setEmail('');
-    setSearchedEmail('');
+    setEmail("");
+    setSearchedEmail("");
     setIssued(null);
     createInvitation.reset();
   }
@@ -88,7 +90,7 @@ export function InviteParticipantDialog({
   return (
     <Dialog
       open={open}
-      onOpenChange={(next) => {
+      onOpenChange={next => {
         setOpen(next);
         if (!next) reset();
       }}
@@ -97,11 +99,11 @@ export function InviteParticipantDialog({
         <Button
           disabled={disabled}
           title={disabled ? disabledReason : undefined}
-          size={compact ? 'sm' : 'default'}
-          variant={compact ? 'outline' : 'default'}
+          size={compact ? "sm" : "default"}
+          variant={compact ? "outline" : "default"}
         >
           <UserPlus aria-hidden="true" />
-          {compact ? 'Invite' : 'Invite someone'}
+          {compact ? "Invite" : "Invite someone"}
         </Button>
       </DialogTrigger>
 
@@ -119,7 +121,8 @@ export function InviteParticipantDialog({
               <Link2 aria-hidden="true" />
               <div className="space-y-2">
                 <AlertTitle>
-                  Invitation issued to {issued.participant?.name ?? 'the participant'}
+                  Invitation issued to{" "}
+                  {issued.participant?.name ?? "the participant"}
                 </AlertTitle>
                 <AlertDescription>
                   Copy it now — we only show it this once.
@@ -130,11 +133,17 @@ export function InviteParticipantDialog({
             <div className="space-y-2">
               <Label htmlFor="join-url">Join link</Label>
               <div className="flex gap-2">
-                <Input id="join-url" readOnly value={issued.joinUrl} className="font-mono text-xs" />
+                <Input
+                  id="join-url"
+                  readOnly
+                  value={issued.joinUrl}
+                  className="font-mono text-xs"
+                />
                 <CopyButton value={issued.joinUrl} />
               </div>
               <p className="text-xs text-muted-foreground">
-                Works until {formatDateTime(issued.expiresAt)}. You can take it back whenever you like, even mid-call.
+                Works until {formatDateTime(issued.expiresAt)}. You can take it
+                back whenever you like, even mid-call.
               </p>
             </div>
 
@@ -149,7 +158,7 @@ export function InviteParticipantDialog({
           <form
             noValidate
             className="space-y-4"
-            onSubmit={(event) => {
+            onSubmit={event => {
               event.preventDefault();
 
               if (!found) {
@@ -161,10 +170,10 @@ export function InviteParticipantDialog({
               createInvitation.mutate(
                 { participantId: found.id },
                 {
-                  onSuccess: (invitation) => {
+                  onSuccess: invitation => {
                     setIssued(invitation);
                     notify.success(
-                      'Invitation issued',
+                      "Invitation issued",
                       `${found.name} can join whenever they're ready.`,
                     );
                   },
@@ -173,7 +182,9 @@ export function InviteParticipantDialog({
               );
             }}
           >
-            {createInvitation.error ? <ErrorState error={createInvitation.error} /> : null}
+            {createInvitation.error ? (
+              <ErrorState error={createInvitation.error} />
+            ) : null}
 
             <div className="space-y-2">
               <Label htmlFor="participant-email">Participant email</Label>
@@ -184,9 +195,9 @@ export function InviteParticipantDialog({
                   autoComplete="off"
                   placeholder="alice@example.com"
                   value={email}
-                  onChange={(event) => {
+                  onChange={event => {
                     setEmail(event.target.value);
-                    setSearchedEmail('');
+                    setSearchedEmail("");
                   }}
                   aria-describedby="participant-hint"
                 />
@@ -195,13 +206,16 @@ export function InviteParticipantDialog({
                   variant="outline"
                   loading={lookup.isFetching}
                   onClick={() => setSearchedEmail(email.trim().toLowerCase())}
-                  disabled={!email.includes('@')}
+                  disabled={!email.includes("@")}
                 >
                   {lookup.isFetching ? null : <Search aria-hidden="true" />}
                   Find
                 </Button>
               </div>
-              <p id="participant-hint" className="text-xs text-muted-foreground">
+              <p
+                id="participant-hint"
+                className="text-xs text-muted-foreground"
+              >
                 Use the email they signed up with.
               </p>
             </div>
@@ -240,7 +254,11 @@ export function InviteParticipantDialog({
             ) : null}
 
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
                 Cancel
               </Button>
               <Button
@@ -248,7 +266,7 @@ export function InviteParticipantDialog({
                 loading={createInvitation.isPending}
                 disabled={Boolean(found) && blocked}
               >
-                {found ? 'Issue invitation' : 'Find participant'}
+                {found ? "Issue invitation" : "Find participant"}
               </Button>
             </DialogFooter>
           </form>

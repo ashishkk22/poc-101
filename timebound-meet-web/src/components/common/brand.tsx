@@ -7,12 +7,6 @@ type BrandMarkProps = {
   title?: string;
 };
 
-/**
- * The wordmark.
- *
- * The clock inside a shield is the whole product in one glyph: access that
- * exists only for a window, and only for the person it was issued to.
- */
 export function BrandMark({
   className,
   title = config.appName,
@@ -73,7 +67,7 @@ export function BrandWordmark({
   );
 }
 
-export function BrandLink({ to = "/", className }: LinkProps) {
+export function BrandLink({ to = "/", className }: Omit<LinkProps, "to"> & { to?: LinkProps["to"] }) {
   return (
     <Link
       to={to}

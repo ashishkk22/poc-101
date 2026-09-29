@@ -21,7 +21,7 @@ pnpm dev                 # http://localhost:5173
 
 Demo accounts come from the backend seed (`pnpm db:seed` there):
 `organizer@example.com`, `alice@example.com`, `bob@example.com`,
-`carol@example.com` — password `TimeBoundDemo123!`.
+`carol@example.com` — password `SyncDemo123!`.
 
 | Command | What it does |
 | --- | --- |
@@ -29,7 +29,7 @@ Demo accounts come from the backend seed (`pnpm db:seed` there):
 | `pnpm build` | Typecheck, then a production bundle in `dist/` |
 | `pnpm preview` | Serve the production build locally |
 | `pnpm typecheck` | TypeScript only |
-| `pnpm test` | Vitest + React Testing Library (112 tests) |
+| `pnpm test` | Vitest + React Testing Library (123 tests) |
 
 ## How it is put together
 
@@ -155,6 +155,27 @@ Vocabulary: a **meeting** is what users have; a **call** is the object in the
 API. The person who set it up is the **host** (`organizerId` in the data).
 Taking an invite back is "taking it back", not "revoking" — the code says
 revoke, the interface does not.
+
+## Microphone and camera
+
+Muting is a promise the interface makes on someone's behalf, so two rules hold
+throughout:
+
+1. **What the buttons say and what the hardware does must agree.** Newly
+   granted tracks always arrive *enabled*, and the call requests its own
+   devices separately from the lobby — so the chosen state is applied to the
+   tracks **before** the stream is published. Otherwise a participant who muted
+   themselves walks in live, reading "muted" over an open microphone.
+2. **A stream is attached to the element, not to a render.** Turning a camera
+   off does not release it — the track stays live with `enabled = false`, which
+   is why the light stays on. `useVideoStream` is a callback ref precisely
+   because the ELEMENT comes and goes while the stream does not; anything keyed
+   on the stream leaves a freshly mounted `<video>` blank over a running
+   camera.
+
+Remote audio rides on each peer's `<video>` element, which is therefore always
+mounted and merely hidden when their camera is off — unmounting it would cut
+the person's sound along with their picture.
 
 ## Timezones
 

@@ -1,5 +1,13 @@
-import { ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+type LoadMoreProps = {
+  hasMore: boolean;
+  loading: boolean;
+  onLoadMore: () => void;
+  loadedCount: number;
+  noun?: string;
+};
 
 /**
  * Cursor pagination, surfaced.
@@ -12,14 +20,8 @@ export function LoadMore({
   loading,
   onLoadMore,
   loadedCount,
-  noun = 'items',
-}: {
-  hasMore: boolean;
-  loading: boolean;
-  onLoadMore: () => void;
-  loadedCount: number;
-  noun?: string;
-}): React.JSX.Element | null {
+  noun = "items",
+}: LoadMoreProps) {
   if (!hasMore) {
     return loadedCount > 0 ? (
       <p className="pt-1 text-center text-xs text-muted-foreground">
@@ -30,7 +32,12 @@ export function LoadMore({
 
   return (
     <div className="flex justify-center pt-1">
-      <Button variant="outline" size="sm" onClick={onLoadMore} loading={loading}>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onLoadMore}
+        loading={loading}
+      >
         {loading ? null : <ChevronDown aria-hidden="true" />}
         Load more
       </Button>

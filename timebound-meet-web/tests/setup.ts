@@ -21,6 +21,16 @@ if (!globalThis.matchMedia) {
   })) as typeof globalThis.matchMedia;
 }
 
+// jsdom has no media pipeline, so `srcObject` does not exist on a <video>.
+// Backing it with a plain property is what lets tests assert that a stream was
+// actually attached to the element.
+if (!('srcObject' in HTMLMediaElement.prototype)) {
+  Object.defineProperty(HTMLMediaElement.prototype, 'srcObject', {
+    writable: true,
+    value: null,
+  });
+}
+
 // jsdom implements no layout, so scrolling is a no-op rather than a crash.
 Element.prototype.scrollIntoView ??= () => undefined;
 

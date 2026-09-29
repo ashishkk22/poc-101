@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -6,19 +6,22 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { EmptyState } from '@/components/common/empty-state';
-import { ErrorState } from '@/components/common/error-state';
-import { LoadingState } from '@/components/common/loading-state';
-import { formatDateTime, formatDuration } from '@/lib/date/format';
-import type { AttendanceStatus } from '@/lib/api/types';
-import { LoadMore } from '@/components/common/load-more';
-import { useInfiniteAttendance } from './queries';
+} from "@/components/ui/table";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { LoadingState } from "@/components/common/LoadingState";
+import { formatDateTime, formatDuration } from "@/lib/date/format";
+import type { AttendanceStatus } from "@/lib/api/types";
+import { LoadMore } from "@/components/common/LoadMore";
+import { useInfiniteAttendance } from "./queries";
 
-const STATUS: Record<AttendanceStatus, { label: string; variant: 'success' | 'neutral' }> = {
-  NOT_JOINED: { label: 'Not joined', variant: 'neutral' },
-  ACTIVE: { label: 'Connected', variant: 'success' },
-  COMPLETED: { label: 'Completed', variant: 'neutral' },
+const STATUS: Record<
+  AttendanceStatus,
+  { label: string; variant: "success" | "neutral" }
+> = {
+  NOT_JOINED: { label: "Not joined", variant: "neutral" },
+  ACTIVE: { label: "Connected", variant: "success" },
+  COMPLETED: { label: "Completed", variant: "neutral" },
 };
 
 /**
@@ -32,14 +35,22 @@ export function AttendanceTable({
   callId: string;
   live?: boolean;
 }): React.JSX.Element {
-  const attendance = useInfiniteAttendance(callId, { refetchInterval: live ? 15_000 : false });
+  const attendance = useInfiniteAttendance(callId, {
+    refetchInterval: live ? 15_000 : false,
+  });
 
-  if (attendance.isPending) return <LoadingState label="Loading attendance…" rows={2} />;
+  if (attendance.isPending)
+    return <LoadingState label="Loading attendance…" rows={2} />;
   if (attendance.isError) {
-    return <ErrorState error={attendance.error} onRetry={() => void attendance.refetch()} />;
+    return (
+      <ErrorState
+        error={attendance.error}
+        onRetry={() => void attendance.refetch()}
+      />
+    );
   }
 
-  const items = attendance.data.pages.flatMap((page) => page.items);
+  const items = attendance.data.pages.flatMap(page => page.items);
 
   if (items.length === 0) {
     return (
@@ -53,51 +64,61 @@ export function AttendanceTable({
   return (
     <div className="space-y-4">
       <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Participant</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>First joined</TableHead>
-          <TableHead>Last left</TableHead>
-          <TableHead>Connected time</TableHead>
-          <TableHead>Sessions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.map((record) => {
-          const status = STATUS[record.status] ?? { label: record.status, variant: 'neutral' as const };
-          const connectedSessions =
-            record.sessions?.filter((session) => session.status === 'CONNECTED').length ?? 0;
+        <TableHeader>
+          <TableRow>
+            <TableHead>Participant</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>First joined</TableHead>
+            <TableHead>Last left</TableHead>
+            <TableHead>Connected time</TableHead>
+            <TableHead>Sessions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map(record => {
+            const status = STATUS[record.status] ?? {
+              label: record.status,
+              variant: "neutral" as const,
+            };
+            const connectedSessions =
+              record.sessions?.filter(session => session.status === "CONNECTED")
+                .length ?? 0;
 
-          return (
-            <TableRow key={record.id}>
-              <TableCell>
-                <div className="space-y-0.5">
-                  <p className="font-medium">{record.participant?.name ?? 'Participant'}</p>
-                  <p className="text-xs text-muted-foreground">{record.participant?.email ?? '—'}</p>
-                </div>
-              </TableCell>
-              <TableCell>
-                <Badge variant={status.variant}>{status.label}</Badge>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {formatDateTime(record.firstJoinedAt, 'Never')}
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {formatDateTime(record.lastLeftAt, '—')}
-              </TableCell>
-              <TableCell className="text-sm">
-                {formatDuration(record.totalConnectedSeconds)}
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {record.sessions?.length ?? 0}
-                {connectedSessions > 0 ? (
-                  <span className="ml-1 text-success">({connectedSessions} live)</span>
-                ) : null}
-              </TableCell>
-            </TableRow>
-          );
-        })}
+            return (
+              <TableRow key={record.id}>
+                <TableCell>
+                  <div className="space-y-0.5">
+                    <p className="font-medium">
+                      {record.participant?.name ?? "Participant"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {record.participant?.email ?? "—"}
+                    </p>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={status.variant}>{status.label}</Badge>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {formatDateTime(record.firstJoinedAt, "Never")}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {formatDateTime(record.lastLeftAt, "—")}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {formatDuration(record.totalConnectedSeconds)}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">
+                  {record.sessions?.length ?? 0}
+                  {connectedSessions > 0 ? (
+                    <span className="ml-1 text-success">
+                      ({connectedSessions} live)
+                    </span>
+                  ) : null}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
   ArrowLeft,
   Ban,
@@ -8,19 +8,25 @@ import {
   Link2,
   ScrollText,
   ShieldCheck,
-} from 'lucide-react';
-import { Link, useParams } from 'react-router-dom';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ConfirmDialog } from '@/components/common/confirm-dialog';
-import { ErrorState } from '@/components/common/error-state';
-import { LoadingState } from '@/components/common/loading-state';
-import { PageHeader } from '@/components/common/page-header';
-import { useIsOrganizer } from '@/features/auth';
-import { AttendanceTable } from '@/features/attendance';
-import { AuditTimeline } from '@/features/audit';
+} from "lucide-react";
+import { Link, useParams } from "react-router-dom";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { ErrorState } from "@/components/common/ErrorState";
+import { LoadingState } from "@/components/common/LoadingState";
+import { PageHeader } from "@/components/common/PageHeader";
+import { useIsOrganizer } from "@/features/auth";
+import { AttendanceTable } from "@/features/attendance";
+import { AuditTimeline } from "@/features/audit";
 import {
   CallStatusBadge,
   CallSummary,
@@ -28,12 +34,12 @@ import {
   useCall,
   useCancelCall,
   useEndCall,
-} from '@/features/calls';
-import { InvitationsPanel } from '@/features/invitations';
-import { TranscriptView } from '@/features/transcript';
-import { RealtimeEvent, useCallRoom, useRealtimeEvent } from '@/lib/realtime';
-import { formatWindow } from '@/lib/date/format';
-import { notify } from '@/lib/toast';
+} from "@/features/calls";
+import { InvitationsPanel } from "@/features/invitations";
+import { TranscriptView } from "@/features/transcript";
+import { RealtimeEvent, useCallRoom, useRealtimeEvent } from "@/lib/realtime";
+import { formatWindow } from "@/lib/date/format";
+import { notify } from "@/lib/toast";
 
 /**
  * The organizer's control surface for one call.
@@ -43,27 +49,30 @@ import { notify } from '@/lib/toast';
  * organizer-only panels, so they are not rendered for them at all.
  */
 export function CallDetailsPage(): React.JSX.Element {
-  const { callId = '' } = useParams<{ callId: string }>();
+  const { callId = "" } = useParams<{ callId: string }>();
   const call = useCall(callId);
   const isOrganizer = useIsOrganizer(call.data?.organizerId);
 
   const cancelCall = useCancelCall(callId);
   const endCall = useEndCall(callId);
 
-  const [confirming, setConfirming] = useState<'cancel' | 'end' | null>(null);
+  const [confirming, setConfirming] = useState<"cancel" | "end" | null>(null);
 
   // Live updates while the organizer watches; the server decides membership.
   useCallRoom(call.data ? callId : null);
-  useRealtimeEvent(RealtimeEvent.CALL_ENDED, (payload) => {
+  useRealtimeEvent(RealtimeEvent.CALL_ENDED, payload => {
     if (payload.callId === callId) void call.refetch();
   });
 
   if (call.isPending) return <LoadingState label="Loading call…" />;
-  if (call.isError) return <ErrorState error={call.error} onRetry={() => void call.refetch()} />;
+  if (call.isError)
+    return (
+      <ErrorState error={call.error} onRetry={() => void call.refetch()} />
+    );
 
   const data = call.data;
-  const isLive = data.status === 'LIVE';
-  const isActionable = data.status === 'SCHEDULED' || isLive;
+  const isLive = data.status === "LIVE";
+  const isActionable = data.status === "SCHEDULED" || isLive;
   const mutating = cancelCall.isPending || endCall.isPending;
 
   return (
@@ -96,7 +105,7 @@ export function CallDetailsPage(): React.JSX.Element {
               {isLive ? (
                 <Button
                   variant="outline"
-                  onClick={() => setConfirming('end')}
+                  onClick={() => setConfirming("end")}
                   disabled={mutating}
                   loading={endCall.isPending}
                 >
@@ -107,7 +116,7 @@ export function CallDetailsPage(): React.JSX.Element {
               {isActionable ? (
                 <Button
                   variant="destructive"
-                  onClick={() => setConfirming('cancel')}
+                  onClick={() => setConfirming("cancel")}
                   disabled={mutating}
                   loading={cancelCall.isPending}
                 >
@@ -170,7 +179,9 @@ export function CallDetailsPage(): React.JSX.Element {
               <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div className="space-y-1">
                   <CardTitle className="text-base">Transcript</CardTitle>
-                  <CardDescription>Ready shortly after the meeting wraps up.</CardDescription>
+                  <CardDescription>
+                    Ready shortly after the meeting wraps up.
+                  </CardDescription>
                 </div>
                 <Button asChild variant="outline" size="sm">
                   <Link to={`/calls/${callId}/transcript`}>Open full page</Link>
@@ -213,20 +224,28 @@ export function CallDetailsPage(): React.JSX.Element {
                 <div>
                   <AlertTitle>No need to dig out the email</AlertTitle>
                   <AlertDescription>
-                    You can join straight from here while you're signed in. The emailed link is
-                    just a shortcut — we only ever show it once.
+                    You can join straight from here while you're signed in. The
+                    emailed link is just a shortcut — we only ever show it once.
                   </AlertDescription>
                 </div>
               </Alert>
 
               <ul className="space-y-2 text-sm text-muted-foreground">
                 <li className="flex gap-2">
-                  <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-                  Turn up early if you like. Once the meeting wraps up, that's that.
+                  <Info
+                    className="mt-0.5 size-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  Turn up early if you like. Once the meeting wraps up, that's
+                  that.
                 </li>
                 <li className="flex gap-2">
-                  <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
-                  The host can take your invite back at any point, even mid-call.
+                  <Info
+                    className="mt-0.5 size-3.5 shrink-0"
+                    aria-hidden="true"
+                  />
+                  The host can take your invite back at any point, even
+                  mid-call.
                 </li>
               </ul>
             </CardContent>
@@ -235,7 +254,9 @@ export function CallDetailsPage(): React.JSX.Element {
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Transcript</CardTitle>
-              <CardDescription>Ready once the meeting has been written up.</CardDescription>
+              <CardDescription>
+                Ready once the meeting has been written up.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <TranscriptView callId={callId} />
@@ -245,8 +266,8 @@ export function CallDetailsPage(): React.JSX.Element {
       )}
 
       <ConfirmDialog
-        open={confirming === 'cancel'}
-        onOpenChange={(open) => (open ? undefined : setConfirming(null))}
+        open={confirming === "cancel"}
+        onOpenChange={open => (open ? undefined : setConfirming(null))}
         title="Call this meeting off?"
         destructive
         pending={cancelCall.isPending}
@@ -256,7 +277,10 @@ export function CallDetailsPage(): React.JSX.Element {
         onConfirm={() =>
           cancelCall.mutate(undefined, {
             onSuccess: () =>
-              notify.success('Called off', 'Nobody can join this one any more.'),
+              notify.success(
+                "Called off",
+                "Nobody can join this one any more.",
+              ),
             onError: notify.error,
             onSettled: () => setConfirming(null),
           })
@@ -264,15 +288,19 @@ export function CallDetailsPage(): React.JSX.Element {
       />
 
       <ConfirmDialog
-        open={confirming === 'end'}
-        onOpenChange={(open) => (open ? undefined : setConfirming(null))}
+        open={confirming === "end"}
+        onOpenChange={open => (open ? undefined : setConfirming(null))}
         title="End this meeting for everyone?"
         pending={endCall.isPending}
         confirmLabel="End it"
         description="Everyone drops out straight away, and we'll write up the transcript afterwards."
         onConfirm={() =>
           endCall.mutate(undefined, {
-            onSuccess: () => notify.success('All wrapped up', "We're writing up the transcript now."),
+            onSuccess: () =>
+              notify.success(
+                "All wrapped up",
+                "We're writing up the transcript now.",
+              ),
             onError: notify.error,
             onSettled: () => setConfirming(null),
           })

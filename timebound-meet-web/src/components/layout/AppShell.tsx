@@ -13,8 +13,8 @@ import { useCurrentUser, useSignOut } from "@/features/auth";
 import { notify } from "@/lib/toast";
 import { config } from "@/lib/config/env";
 import { cn } from "@/lib/utils";
-import { RealtimeStatusBadge } from "./realtime-status-badge";
-import { ThemeToggle } from "./theme-toggle";
+import { RealtimeStatusBadge } from "./RealtimeStatusBadge";
+import { ThemeToggle } from "./ThemeToggle";
 
 const NAV = [
   { to: "/dashboard", label: "Meetings", icon: CalendarClock },
@@ -32,7 +32,7 @@ function initials(name: string): string {
   );
 }
 
-export function AppShell(): React.JSX.Element {
+export function AppShell() {
   const { user } = useCurrentUser();
   const signOut = useSignOut();
 

@@ -1,5 +1,5 @@
-import type { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import type { ReactNode } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,20 +7,9 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 
-/** Destructive actions are confirmed, and the confirm button owns the pending state. */
-export function ConfirmDialog({
-  open,
-  onOpenChange,
-  title,
-  description,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
-  destructive = false,
-  pending = false,
-  onConfirm,
-}: {
+type ConfirmDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -30,9 +19,25 @@ export function ConfirmDialog({
   destructive?: boolean;
   pending?: boolean;
   onConfirm: () => void;
-}): React.JSX.Element {
+};
+
+/** Destructive actions are confirmed, and the confirm button owns the pending state. */
+export function ConfirmDialog({
+  open,
+  onOpenChange,
+  title,
+  description,
+  confirmLabel = "Confirm",
+  cancelLabel = "Cancel",
+  destructive = false,
+  pending = false,
+  onConfirm,
+}: ConfirmDialogProps) {
   return (
-    <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
+    <Dialog
+      open={open}
+      onOpenChange={next => (pending ? undefined : onOpenChange(next))}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
@@ -41,11 +46,15 @@ export function ConfirmDialog({
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={pending}
+          >
             {cancelLabel}
           </Button>
           <Button
-            variant={destructive ? 'destructive' : 'default'}
+            variant={destructive ? "destructive" : "default"}
             onClick={onConfirm}
             loading={pending}
           >

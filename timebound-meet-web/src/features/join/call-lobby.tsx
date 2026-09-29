@@ -1,13 +1,20 @@
-import { useEffect, useRef } from 'react';
-import { CalendarClock, Clock, Mic, MicOff, ShieldCheck, Video, VideoOff } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { ErrorState } from '@/components/common/error-state';
-import { formatRelative, formatWindow, parse } from '@/lib/date/format';
-import type { JoinCall } from '@/lib/api/types';
-import { cn } from '@/lib/utils';
-import type { LocalMedia } from './use-local-media';
+import {
+  CalendarClock,
+  Clock,
+  Mic,
+  MicOff,
+  ShieldCheck,
+  Video,
+  VideoOff,
+} from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ErrorState } from "@/components/common/ErrorState";
+import { formatRelative, formatWindow, parse } from "@/lib/date/format";
+import type { JoinCall } from "@/lib/api/types";
+import { cn } from "@/lib/utils";
+import { useVideoStream, type LocalMedia } from "./use-local-media";
 
 function initials(name: string): string {
   return (
@@ -15,8 +22,8 @@ function initials(name: string): string {
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2)
-      .map((part) => part[0]?.toUpperCase() ?? '')
-      .join('') || '?'
+      .map(part => part[0]?.toUpperCase() ?? "")
+      .join("") || "?"
   );
 }
 
@@ -48,12 +55,7 @@ export function CallLobby({
   onCancel: () => void;
   roleLabel: string;
 }): React.JSX.Element {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    const element = videoRef.current;
-    if (element) element.srcObject = media.stream ?? null;
-  }, [media.stream]);
+  const attachPreview = useVideoStream(media.stream);
 
   const start = parse(call.scheduledStart);
   const notStartedYet = start ? start.getTime() > Date.now() : false;
@@ -64,47 +66,61 @@ export function CallLobby({
       {/* Device check */}
       <div className="space-y-3">
         <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-2xl border border-border bg-[oklch(0.24_0.02_258)] text-white">
-          {showVideo ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="size-full scale-x-[-1] object-cover"
-            />
-          ) : (
+          {/* Always mounted: unmounting it loses the stream attachment. */}
+          <video
+            ref={attachPreview}
+            autoPlay
+            playsInline
+            muted
+            className={cn(
+              "size-full scale-x-[-1] object-cover",
+              showVideo ? "block" : "hidden",
+            )}
+          />
+
+          {showVideo ? null : (
             <div className="flex flex-col items-center gap-3 px-6 text-center">
               <span className="flex size-20 items-center justify-center rounded-full bg-white/10 text-2xl font-semibold">
                 {initials(viewerName)}
               </span>
               <p className="text-sm text-white/60">
-                {media.permission === 'PROMPTING'
-                  ? 'Just checking your camera…'
-                    : media.cameraOn
-                      ? "We can't see a camera — you can still join"
-                      : 'Camera off'}
+                {media.permission === "PROMPTING"
+                  ? "Just checking your camera…"
+                  : media.cameraOn
+                    ? "We can't see a camera — you can still join"
+                    : "Camera off"}
               </p>
             </div>
           )}
 
           <div className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-gradient-to-t from-black/60 to-transparent p-4">
             <Button
-              variant={media.micOn ? 'secondary' : 'destructive'}
+              variant={media.micOn ? "secondary" : "destructive"}
               size="icon"
               onClick={media.toggleMic}
               aria-pressed={!media.micOn}
-              aria-label={media.micOn ? 'Turn microphone off' : 'Turn microphone on'}
+              aria-label={
+                media.micOn ? "Turn microphone off" : "Turn microphone on"
+              }
             >
-              {media.micOn ? <Mic aria-hidden="true" /> : <MicOff aria-hidden="true" />}
+              {media.micOn ? (
+                <Mic aria-hidden="true" />
+              ) : (
+                <MicOff aria-hidden="true" />
+              )}
             </Button>
             <Button
-              variant={media.cameraOn ? 'secondary' : 'destructive'}
+              variant={media.cameraOn ? "secondary" : "destructive"}
               size="icon"
               onClick={media.toggleCamera}
               aria-pressed={!media.cameraOn}
-              aria-label={media.cameraOn ? 'Turn camera off' : 'Turn camera on'}
+              aria-label={media.cameraOn ? "Turn camera off" : "Turn camera on"}
             >
-              {media.cameraOn ? <Video aria-hidden="true" /> : <VideoOff aria-hidden="true" />}
+              {media.cameraOn ? (
+                <Video aria-hidden="true" />
+              ) : (
+                <VideoOff aria-hidden="true" />
+              )}
             </Button>
           </div>
         </div>
@@ -121,7 +137,9 @@ export function CallLobby({
       <div className="space-y-5">
         <div className="space-y-2">
           <Badge variant="neutral">{roleLabel}</Badge>
-          <h1 className="text-2xl font-semibold tracking-tight">{call.title}</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {call.title}
+          </h1>
 
           <div className="space-y-1 text-sm text-muted-foreground">
             <p className="flex items-center gap-2">
@@ -139,8 +157,9 @@ export function CallLobby({
           <Alert variant="info">
             <Clock aria-hidden="true" />
             <AlertDescription>
-              You're a bit early — it starts {formatRelative(call.scheduledStart)}. Go on in and
-              make yourself comfortable.
+              You're a bit early — it starts{" "}
+              {formatRelative(call.scheduledStart)}. Go on in and make yourself
+              comfortable.
             </AlertDescription>
           </Alert>
         ) : null}
@@ -148,16 +167,29 @@ export function CallLobby({
         {error ? <ErrorState error={error} /> : null}
 
         <div className="flex flex-col gap-2 sm:flex-row">
-          <Button size="lg" onClick={onJoin} loading={joining} className={cn('sm:flex-1')}>
-            {joining ? 'One moment…' : 'Join now'}
+          <Button
+            size="lg"
+            onClick={onJoin}
+            loading={joining}
+            className={cn("sm:flex-1")}
+          >
+            {joining ? "One moment…" : "Join now"}
           </Button>
-          <Button size="lg" variant="outline" onClick={onCancel} disabled={joining}>
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={onCancel}
+            disabled={joining}
+          >
             Cancel
           </Button>
         </div>
 
         <p className="flex items-start gap-2 text-xs text-muted-foreground">
-          <ShieldCheck className="mt-0.5 size-3.5 shrink-0" aria-hidden="true" />
+          <ShieldCheck
+            className="mt-0.5 size-3.5 shrink-0"
+            aria-hidden="true"
+          />
           Only people the host invited can get in.
         </p>
       </div>

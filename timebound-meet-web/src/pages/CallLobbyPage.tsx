@@ -2,8 +2,8 @@ import { useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { BrandWordmark } from "@/components/common/Brand";
-import { ErrorState } from "@/components/common/error-state";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ErrorState } from "@/components/common/ErrorState";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useCurrentUser } from "@/features/auth";
 import { useCall } from "@/features/calls";
 import {

@@ -1,6 +1,13 @@
-import { useEffect, useState } from 'react';
-import { Clock } from 'lucide-react';
-import { formatCountdown, formatTime, parse } from '@/lib/date/format';
+import { useEffect, useState } from "react";
+import { Clock } from "lucide-react";
+import { formatCountdown, formatTime, parse } from "@/lib/date/format";
+
+type CallTimerProps = {
+  scheduledStart: string;
+  scheduledEnd: string;
+  /** Server clock from the last heartbeat, used to correct local drift. */
+  serverTime?: string | null;
+};
 
 /**
  * Informational only.
@@ -14,11 +21,7 @@ export function CallTimer({
   scheduledEnd,
   /** Server clock from the last heartbeat, used to correct local drift. */
   serverTime,
-}: {
-  scheduledStart: string;
-  scheduledEnd: string;
-  serverTime?: string | null;
-}): React.JSX.Element {
+}: CallTimerProps) {
   const [now, setNow] = useState(() => Date.now());
   const [offset, setOffset] = useState(0);
 
@@ -38,7 +41,10 @@ export function CallTimer({
 
   const notStarted = current < start;
   const remaining = notStarted ? start - current : end - current;
-  const elapsedRatio = end > start ? Math.min(1, Math.max(0, (current - start) / (end - start))) : 0;
+  const elapsedRatio =
+    end > start
+      ? Math.min(1, Math.max(0, (current - start) / (end - start)))
+      : 0;
   const endingSoon = !notStarted && remaining <= 5 * 60_000 && remaining > 0;
 
   return (
@@ -46,20 +52,20 @@ export function CallTimer({
       <div className="flex flex-col items-end">
         <span
           className={`inline-flex items-center gap-1.5 font-mono text-sm tabular-nums ${
-            endingSoon ? 'text-warning-foreground' : ''
+            endingSoon ? "text-warning-foreground" : ""
           }`}
           role="timer"
           aria-live="off"
         >
           <Clock className="size-3.5" aria-hidden="true" />
-          {remaining > 0 ? formatCountdown(remaining) : '00:00'}
+          {remaining > 0 ? formatCountdown(remaining) : "00:00"}
         </span>
         <span className="text-xs text-muted-foreground">
           {notStarted
             ? `starts ${formatTime(scheduledStart)}`
             : remaining > 0
               ? `ends ${formatTime(scheduledEnd)}`
-              : 'window closed'}
+              : "window closed"}
         </span>
       </div>
 
@@ -73,7 +79,7 @@ export function CallTimer({
       >
         <div
           className={`h-full rounded-full transition-[width] duration-1000 ${
-            endingSoon ? 'bg-warning' : 'bg-primary'
+            endingSoon ? "bg-warning" : "bg-primary"
           }`}
           style={{ width: `${elapsedRatio * 100}%` }}
         />

@@ -14,4 +14,9 @@ export {
 } from './queries';
 export { useHeartbeat, type HeartbeatState } from './use-heartbeat';
 export { CallLobby } from './call-lobby';
-export { useLocalMedia, type LocalMedia, type MediaPermission } from './use-local-media';
+export {
+  useLocalMedia,
+  useVideoStream,
+  type LocalMedia,
+  type MediaPermission,
+} from './use-local-media';

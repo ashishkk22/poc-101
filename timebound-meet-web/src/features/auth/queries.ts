@@ -23,7 +23,16 @@ export function useSession() {
         throw error;
       }
     },
-    staleTime: 60_000,
+    staleTime: 5 * 60_000,
+    /**
+     * Not on every window focus.
+     *
+     * A session that ends elsewhere is caught the moment any request fails
+     * with AUTHENTICATION_REQUIRED, and a participant in a call is re-checked
+     * every heartbeat. Re-asking on each tab switch bought nothing and made
+     * the browser its own noisiest client.
+     */
+    refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
       if (ApiError.isApiError(error) && error.code === ErrorCode.NETWORK_ERROR) {
         return failureCount < 2;

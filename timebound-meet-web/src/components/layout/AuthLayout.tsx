@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Clock, ScrollText, ShieldOff } from "lucide-react";
 import type { ReactNode } from "react";
 import { BrandLink } from "@/components/common/Brand";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { config } from "@/lib/config/env";
 
 const PILLARS = [
@@ -23,6 +23,14 @@ const PILLARS = [
   },
 ] as const;
 
+type AuthLayoutProps = {
+  title: string;
+  description: ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
+  backTo?: { to: string; label: string };
+};
+
 /**
  * Shared chrome for the signed-out pages.
  *
@@ -36,13 +44,7 @@ export function AuthLayout({
   children,
   footer,
   backTo,
-}: {
-  title: string;
-  description: ReactNode;
-  children: ReactNode;
-  footer?: ReactNode;
-  backTo?: { to: string; label: string };
-}): React.JSX.Element {
+}: AuthLayoutProps) {
   return (
     <div className="grid min-h-svh lg:grid-cols-[1.05fr_1fr]">
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-accent/40 p-10 lg:flex">

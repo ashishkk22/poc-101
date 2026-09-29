@@ -18,7 +18,7 @@ const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL as string }),
 });
 
-const DEMO_PASSWORD = 'TimeBoundDemo123!';
+const DEMO_PASSWORD = 'SyncDemo123!';
 
 const PEOPLE = [
   { email: 'organizer@example.com', name: 'Olivia Organizer' },
@@ -29,7 +29,15 @@ const PEOPLE = [
 
 async function ensureUser(email: string, name: string): Promise<string> {
   const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return existing.id;
+  if (existing) {
+    // Re-apply the demo password so a changed DEMO_PASSWORD reaches existing users.
+    const ctx = await auth.$context;
+    await prisma.account.updateMany({
+      where: { userId: existing.id, providerId: 'credential' },
+      data: { password: await ctx.password.hash(DEMO_PASSWORD) },
+    });
+    return existing.id;
+  }
 
   // Sign-up goes through Better Auth so password hashing matches sign-in.
   await auth.api.signUpEmail({ body: { email, name, password: DEMO_PASSWORD } });

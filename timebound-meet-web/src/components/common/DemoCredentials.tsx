@@ -1,20 +1,23 @@
-import { KeyRound } from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { KeyRound } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
-const DEMO_PASSWORD = 'TimeBoundDemo123!';
-const DEMO_ACCOUNTS = ['organizer@example.com', 'alice@example.com', 'bob@example.com'] as const;
+const DEMO_PASSWORD = "SyncDemo123!";
+const DEMO_ACCOUNTS = [
+  "organizer@example.com",
+  "alice@example.com",
+  "bob@example.com",
+] as const;
 
+type DemoCredentialsProps = {
+  onPick?: (email: string) => void;
+};
 /**
  * Seeded demo accounts, shown in development only.
  *
  * These exist solely because the backend seed creates them; the block is
  * compiled out of a production build, so nothing about them ships.
  */
-export function DemoCredentials({
-  onPick,
-}: {
-  onPick?: (email: string) => void;
-}): React.JSX.Element | null {
+export function DemoCredentials({ onPick }: DemoCredentialsProps) {
   if (!import.meta.env.DEV) return null;
 
   return (
@@ -27,7 +30,7 @@ export function DemoCredentials({
             Password <code className="font-mono text-xs">{DEMO_PASSWORD}</code>
           </span>
           <span className="mt-1.5 flex flex-wrap gap-1.5">
-            {DEMO_ACCOUNTS.map((email) => (
+            {DEMO_ACCOUNTS.map(email => (
               <button
                 key={email}
                 type="button"

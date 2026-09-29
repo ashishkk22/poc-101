@@ -24,14 +24,49 @@ export interface LocalMedia {
   error: string | null;
 }
 
-export function useLocalMedia(options: { enabled: boolean } = { enabled: true }): LocalMedia {
+/**
+ * Attaches a stream to a `<video>` element.
+ *
+ * Deliberately a callback ref rather than an effect keyed on the stream: the
+ * ELEMENT comes and goes (a preview hidden while the camera is off, a tile
+ * that unmounts), and a stream that has not changed would leave a freshly
+ * mounted element blank while the camera light stayed on.
+ */
+export function useVideoStream(
+  stream: MediaStream | null | undefined,
+): (element: HTMLVideoElement | null) => void {
+  return useCallback(
+    (element: HTMLVideoElement | null) => {
+      if (element) element.srcObject = stream ?? null;
+    },
+    [stream],
+  );
+}
+
+export function useLocalMedia(
+  options: {
+    enabled: boolean;
+    /**
+     * Where the microphone and camera should start.
+     *
+     * Someone who muted themselves in the lobby has said what they want; the
+     * call must open that way rather than quietly putting them back on air.
+     */
+    initialMicOn?: boolean;
+    initialCameraOn?: boolean;
+  } = { enabled: true },
+): LocalMedia {
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [permission, setPermission] = useState<MediaPermission>('IDLE');
-  const [micOn, setMicOnState] = useState(true);
-  const [cameraOn, setCameraOnState] = useState(true);
+  const [micOn, setMicOnState] = useState(options.initialMicOn ?? true);
+  const [cameraOn, setCameraOnState] = useState(options.initialCameraOn ?? true);
   const [error, setError] = useState<string | null>(null);
 
   const streamRef = useRef<MediaStream | null>(null);
+
+  // Read inside the grant handler without making it re-request the devices.
+  const desired = useRef({ micOn, cameraOn });
+  desired.current = { micOn, cameraOn };
 
   const stop = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop());
@@ -58,6 +93,12 @@ export function useLocalMedia(options: { enabled: boolean } = { enabled: true })
           granted.getTracks().forEach((track) => track.stop());
           return;
         }
+        // Newly granted tracks always arrive enabled. Publishing them before
+        // reconciling would broadcast a participant who believes they are
+        // muted — so the desired state is applied first, then the stream.
+        for (const track of granted.getAudioTracks()) track.enabled = desired.current.micOn;
+        for (const track of granted.getVideoTracks()) track.enabled = desired.current.cameraOn;
+
         streamRef.current = granted;
         setStream(granted);
         setPermission('GRANTED');

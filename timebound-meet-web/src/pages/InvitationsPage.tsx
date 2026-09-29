@@ -1,5 +1,5 @@
-import { PageHeader } from '@/components/common/page-header';
-import { MyInvitationsList } from '@/features/invitations';
+import { PageHeader } from "@/components/common/PageHeader";
+import { MyInvitationsList } from "@/features/invitations";
 
 /**
  * "You have been invited to these."

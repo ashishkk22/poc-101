@@ -1,10 +1,16 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ErrorState } from '@/components/common/error-state';
-import { LoadingState } from '@/components/common/loading-state';
-import type { Call } from '@/lib/api/types';
-import { InvitationTable } from './invitation-table';
-import { InviteParticipantDialog } from './invite-participant-dialog';
-import { useInvitations } from './queries';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { ErrorState } from "@/components/common/ErrorState";
+import { LoadingState } from "@/components/common/LoadingState";
+import type { Call } from "@/lib/api/types";
+import { InvitationTable } from "./invitation-table";
+import { InviteParticipantDialog } from "./invite-participant-dialog";
+import { useInvitations } from "./queries";
 
 /**
  * Owns the invitation list for a call.
@@ -16,7 +22,7 @@ import { useInvitations } from './queries';
 export function InvitationsPanel({ call }: { call: Call }): React.JSX.Element {
   const invitations = useInvitations(call.id);
 
-  const closed = call.status === 'CANCELLED' || call.status === 'ENDED';
+  const closed = call.status === "CANCELLED" || call.status === "ENDED";
   const disabledReason = closed
     ? "You can't invite people once a meeting is over or called off."
     : undefined;
@@ -44,7 +50,10 @@ export function InvitationsPanel({ call }: { call: Call }): React.JSX.Element {
         {invitations.isPending ? (
           <LoadingState label="Loading invitations…" rows={2} />
         ) : invitations.isError ? (
-          <ErrorState error={invitations.error} onRetry={() => void invitations.refetch()} />
+          <ErrorState
+            error={invitations.error}
+            onRetry={() => void invitations.refetch()}
+          />
         ) : (
           <InvitationTable callId={call.id} />
         )}

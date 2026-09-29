@@ -10,7 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useCurrentUser } from "@/features/auth";
 import {
   CallLobby,

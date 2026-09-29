@@ -1,18 +1,23 @@
-import { useMemo } from 'react';
-import { CalendarClock, CalendarPlus, CheckCircle2, Radio } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { EmptyState } from '@/components/common/empty-state';
-import { ErrorState } from '@/components/common/error-state';
-import { LoadMore } from '@/components/common/load-more';
-import { LoadingState } from '@/components/common/loading-state';
-import { PageHeader } from '@/components/common/page-header';
-import { CallCard, flattenPages, useCalls, useInfiniteCalls } from '@/features/calls';
-import { useCurrentUser } from '@/features/auth';
-import type { Call, ListCallsQuery } from '@/lib/api/types';
-import { parse } from '@/lib/date/format';
+import { useMemo } from "react";
+import { CalendarClock, CalendarPlus, CheckCircle2, Radio } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/common/EmptyState";
+import { ErrorState } from "@/components/common/ErrorState";
+import { LoadMore } from "@/components/common/LoadMore";
+import { LoadingState } from "@/components/common/LoadingState";
+import { PageHeader } from "@/components/common/PageHeader";
+import {
+  CallCard,
+  flattenPages,
+  useCalls,
+  useInfiniteCalls,
+} from "@/features/calls";
+import { useCurrentUser } from "@/features/auth";
+import type { Call, ListCallsQuery } from "@/lib/api/types";
+import { parse } from "@/lib/date/format";
 
 /** A 30-day horizon keeps "next up" both bounded and honestly labelled. */
 const UPCOMING_HORIZON_DAYS = 30;
@@ -22,7 +27,10 @@ function horizon(days: number): string {
 }
 
 function byStartAscending(a: Call, b: Call): number {
-  return (parse(a.scheduledStart)?.getTime() ?? 0) - (parse(b.scheduledStart)?.getTime() ?? 0);
+  return (
+    (parse(a.scheduledStart)?.getTime() ?? 0) -
+    (parse(b.scheduledStart)?.getTime() ?? 0)
+  );
 }
 
 interface SectionProps {
@@ -44,7 +52,7 @@ function CallSection({
   emptyDescription,
   sortAscending = false,
   highlight = false,
-  noun = 'calls',
+  noun = "calls",
 }: SectionProps): React.JSX.Element {
   const { user } = useCurrentUser();
   const calls = useInfiniteCalls(query);
@@ -55,7 +63,10 @@ function CallSection({
   }, [calls.data?.pages, sortAscending]);
 
   if (calls.isPending) return <LoadingState label="Loading calls…" />;
-  if (calls.isError) return <ErrorState error={calls.error} onRetry={() => void calls.refetch()} />;
+  if (calls.isError)
+    return (
+      <ErrorState error={calls.error} onRetry={() => void calls.refetch()} />
+    );
 
   if (items.length === 0) {
     return <EmptyState title={emptyTitle} description={emptyDescription} />;
@@ -63,8 +74,13 @@ function CallSection({
 
   return (
     <div className="space-y-3">
-      {items.map((call) => (
-        <CallCard key={call.id} call={call} currentUserId={user?.id} highlight={highlight} />
+      {items.map(call => (
+        <CallCard
+          key={call.id}
+          call={call}
+          currentUserId={user?.id}
+          highlight={highlight}
+        />
       ))}
       <LoadMore
         hasMore={Boolean(calls.hasNextPage)}
@@ -83,7 +99,7 @@ function SummaryCard({
   count,
   more,
   loading,
-  tone = 'default',
+  tone = "default",
 }: {
   icon: typeof Radio;
   label: string;
@@ -91,24 +107,24 @@ function SummaryCard({
   /** True when the backend has further pages, so the figure is a floor. */
   more: boolean;
   loading: boolean;
-  tone?: 'default' | 'success';
+  tone?: "default" | "success";
 }): React.JSX.Element {
   return (
     <Card>
       <CardContent className="flex items-center gap-4 p-5">
         <span
           className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${
-            tone === 'success' ? 'bg-success/12' : 'bg-primary/10'
+            tone === "success" ? "bg-success/12" : "bg-primary/10"
           }`}
         >
           <Icon
-            className={`size-5 ${tone === 'success' ? 'text-success' : 'text-primary'}`}
+            className={`size-5 ${tone === "success" ? "text-success" : "text-primary"}`}
             aria-hidden="true"
           />
         </span>
         <div className="min-w-0">
           <p className="text-2xl font-semibold tabular-nums">
-            {loading ? '—' : `${count}${more ? '+' : ''}`}
+            {loading ? "—" : `${count}${more ? "+" : ""}`}
           </p>
           <p className="truncate text-sm text-muted-foreground">{label}</p>
         </div>
@@ -125,22 +141,25 @@ function SummaryCard({
  */
 export function DashboardPage(): React.JSX.Element {
   const { user } = useCurrentUser();
-  const greeting = useMemo(() => user?.name?.split(' ')[0] ?? 'there', [user]);
+  const greeting = useMemo(() => user?.name?.split(" ")[0] ?? "there", [user]);
   const upcomingWindow = useMemo(
-    () => ({ after: new Date().toISOString(), before: horizon(UPCOMING_HORIZON_DAYS) }),
+    () => ({
+      after: new Date().toISOString(),
+      before: horizon(UPCOMING_HORIZON_DAYS),
+    }),
     [],
   );
 
   // Small, capped reads purely for the counters above the tabs.
-  const live = useCalls({ role: 'any', status: 'LIVE', limit: 25 });
+  const live = useCalls({ role: "any", status: "LIVE", limit: 25 });
   const upcoming = useCalls({
-    role: 'any',
-    status: 'SCHEDULED',
+    role: "any",
+    status: "SCHEDULED",
     startAfter: upcomingWindow.after,
     startBefore: upcomingWindow.before,
     limit: 25,
   });
-  const ended = useCalls({ role: 'any', status: 'ENDED', limit: 25 });
+  const ended = useCalls({ role: "any", status: "ENDED", limit: 25 });
 
   return (
     <div className="space-y-6">
@@ -196,8 +215,8 @@ export function DashboardPage(): React.JSX.Element {
         <TabsContent value="upcoming">
           <CallSection
             query={{
-              role: 'any',
-              status: 'SCHEDULED',
+              role: "any",
+              status: "SCHEDULED",
               startAfter: upcomingWindow.after,
               startBefore: upcomingWindow.before,
               limit: 25,
@@ -210,7 +229,7 @@ export function DashboardPage(): React.JSX.Element {
 
         <TabsContent value="live">
           <CallSection
-            query={{ role: 'any', status: 'LIVE', limit: 25 }}
+            query={{ role: "any", status: "LIVE", limit: 25 }}
             highlight
             emptyTitle="Nothing happening right now"
             emptyDescription="Meetings show up here while they're running."
@@ -219,7 +238,7 @@ export function DashboardPage(): React.JSX.Element {
 
         <TabsContent value="ended">
           <CallSection
-            query={{ role: 'any', status: 'ENDED', limit: 25 }}
+            query={{ role: "any", status: "ENDED", limit: 25 }}
             emptyTitle="Nothing here yet"
             emptyDescription="Once a meeting wraps up, you'll find it here with its transcript."
           />
@@ -227,7 +246,7 @@ export function DashboardPage(): React.JSX.Element {
 
         <TabsContent value="invited">
           <CallSection
-            query={{ role: 'participant', limit: 25 }}
+            query={{ role: "participant", limit: 25 }}
             emptyTitle="No invites yet"
             emptyDescription="When someone invites you, it'll show up here."
           />

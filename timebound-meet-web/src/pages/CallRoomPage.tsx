@@ -15,11 +15,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrandMark, BrandWordmark } from "@/components/common/Brand";
-import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { ConfirmDialog } from "@/components/common/confirm-dialog";
-import { CallControls } from "@/components/call/call-controls";
-import { CallTimer } from "@/components/call/call-timer";
-import { VideoTile } from "@/components/call/video-tile";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { CallControls } from "@/components/call/CallControls";
+import { CallTimer } from "@/components/call/CallTimer";
+import { VideoTile } from "@/components/call/VideoTile";
 import { useCurrentUser } from "@/features/auth";
 import { CallStatusBadge, useEndCall } from "@/features/calls";
 import { LiveCaptionPanel } from "@/features/captions";
@@ -30,7 +30,7 @@ import {
   useLiveCaptions,
   useWebRtcMesh,
 } from "@/features/call-media";
-import { ActivityPanel } from "@/components/call/activity-panel";
+import { ActivityPanel } from "@/components/call/ActivityPanel";
 import {
   useCallRoster,
   useCallSession,
@@ -225,7 +225,12 @@ export function CallRoomPage(): React.JSX.Element {
   const active = Boolean(session);
   const isOrganizer = session?.role === "ORGANIZER";
 
-  const media = useLocalMedia({ enabled: active });
+  // The lobby is where these were decided; the call honours them.
+  const media = useLocalMedia({
+    enabled: active,
+    initialMicOn: session?.micOn ?? true,
+    initialCameraOn: session?.cameraOn ?? true,
+  });
 
   // The room subscription both authorizes us and tells us who is already here.
   const room = useCallRoom(session ? callId : null);

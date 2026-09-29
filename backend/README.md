@@ -550,6 +550,7 @@ evaluated at the database. There is no unbounded `findMany`.
 | CORS             | Explicit origin allowlist with credentials; `*` rejected at boot             |
 | Security headers | HSTS, CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` |
 | Rate limiting    | Redis-backed per bucket; the join limiter is the tightest                    |
+| Auth buckets     | Tight on anything carrying a secret; generous on reading your own session    |
 | Input validation | Zod on body, query, params and cursors — before any business logic           |
 | Serialization    | Explicit DTOs; `tokenHash` is not a field on any DTO type                    |
 | Audit            | Append-only, sanitized metadata, organizer-readable                          |

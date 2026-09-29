@@ -1,6 +1,6 @@
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { AuthLayout } from '@/components/layout/auth-layout';
-import { SignupForm, useCurrentUser } from '@/features/auth';
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { AuthLayout } from "@/components/layout/AuthLayout";
+import { SignupForm, useCurrentUser } from "@/features/auth";
 
 interface LocationState {
   from?: string;
@@ -18,17 +18,17 @@ export function SignupPage(): React.JSX.Element {
   const from = (location.state as LocationState | null)?.from;
 
   if (!isLoading && isAuthenticated) {
-    return <Navigate to={from ?? '/dashboard'} replace />;
+    return <Navigate to={from ?? "/dashboard"} replace />;
   }
 
   return (
     <AuthLayout
-      backTo={{ to: '/', label: 'Back to home' }}
+      backTo={{ to: "/", label: "Back to home" }}
       title="Let's get you set up"
       description="Takes about a minute. Then you can host meetings or join ones you're invited to."
       footer={
         <>
-          Already have an account?{' '}
+          Already have an account?{" "}
           <Link
             to="/login"
             state={from ? { from } : undefined}
@@ -39,7 +39,9 @@ export function SignupPage(): React.JSX.Element {
         </>
       }
     >
-      <SignupForm onSuccess={() => navigate(from ?? '/dashboard', { replace: true })} />
+      <SignupForm
+        onSuccess={() => navigate(from ?? "/dashboard", { replace: true })}
+      />
     </AuthLayout>
   );
 }
