@@ -1,1 +1,1 @@
-export { LiveCaptionPanel } from './live-caption-panel';
+export { LiveCaptionPanel } from "./LiveCaptionPanel";

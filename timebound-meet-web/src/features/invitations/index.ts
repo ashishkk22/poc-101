@@ -4,9 +4,9 @@ export {
   useCreateInvitation,
   useRevokeInvitation,
   useUserLookup,
-} from './queries';
-export { InvitationTable } from './invitation-table';
-export { InvitationsPanel } from './invitations-panel';
-export { InvitationStatusBadge } from './invitation-status-badge';
-export { InviteParticipantDialog } from './invite-participant-dialog';
-export { MyInvitationsList, useMyInvitations } from './my-invitations';
+} from "./queries";
+export { InvitationTable } from "./InvitationTable";
+export { InvitationsPanel } from "./InvitationsPanel";
+export { InvitationStatusBadge } from "./InvitationStatusBadge";
+export { InviteParticipantDialog } from "./InviteParticipantDialog";
+export { MyInvitationsList, useMyInvitations } from "./MyInvitations";

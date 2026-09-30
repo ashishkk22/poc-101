@@ -1,5 +1,5 @@
-import { apiClient } from './client';
-import type { Transcript } from './types';
+import { apiClient } from "./client";
+import type { Transcript } from "./types";
 
 export const transcriptApi = {
   /**
@@ -7,5 +7,8 @@ export const transcriptApi = {
    * expected state, not a failure — the caller renders it as "processing".
    */
   getForCall: (callId: string, signal?: AbortSignal) =>
-    apiClient.get<Transcript>(`/calls/${callId}/transcript`, signal ? { signal } : {}),
+    apiClient.get<Transcript>(
+      `/calls/${callId}/transcript`,
+      signal ? { signal } : {},
+    ),
 };

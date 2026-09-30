@@ -6,18 +6,23 @@
  * OpenAPI document later, this file is the one to replace.
  */
 
-export type CallStatus = 'DRAFT' | 'SCHEDULED' | 'LIVE' | 'ENDED' | 'CANCELLED';
-export type InvitationStatus = 'ACTIVE' | 'REVOKED' | 'EXPIRED';
-export type AttendanceStatus = 'NOT_JOINED' | 'ACTIVE' | 'COMPLETED';
+export type CallStatus = "DRAFT" | "SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED";
+export type InvitationStatus = "ACTIVE" | "REVOKED" | "EXPIRED";
+export type AttendanceStatus = "NOT_JOINED" | "ACTIVE" | "COMPLETED";
 export type AttendanceSessionStatus =
-  | 'CONNECTED'
-  | 'LEFT'
-  | 'REVOKED'
-  | 'WINDOW_CLOSED'
-  | 'CALL_ENDED'
-  | 'DISCONNECTED';
-export type TranscriptStatus = 'PENDING' | 'PROCESSING' | 'READY' | 'FAILED' | 'DELETED';
-export type AuditOutcome = 'SUCCESS' | 'DENIED' | 'FAILURE';
+  | "CONNECTED"
+  | "LEFT"
+  | "REVOKED"
+  | "WINDOW_CLOSED"
+  | "CALL_ENDED"
+  | "DISCONNECTED";
+export type TranscriptStatus =
+  | "PENDING"
+  | "PROCESSING"
+  | "READY"
+  | "FAILED"
+  | "DELETED";
+export type AuditOutcome = "SUCCESS" | "DENIED" | "FAILURE";
 
 export interface User {
   id: string;
@@ -115,7 +120,7 @@ export interface ProviderSession {
   expiresAt: string;
 }
 
-export type CallRole = 'ORGANIZER' | 'PARTICIPANT' | 'NONE';
+export type CallRole = "ORGANIZER" | "PARTICIPANT" | "NONE";
 
 export interface JoinResult {
   call: JoinCall;
@@ -161,7 +166,7 @@ export interface MyInvitation {
 }
 
 export interface HeartbeatResult {
-  status: 'ACTIVE';
+  status: "ACTIVE";
   sessionId: string;
   serverTime: string;
   callEndsAt: string;
@@ -185,7 +190,7 @@ export interface PaginationQuery {
   limit?: number;
 }
 
-export type CallRoleFilter = 'organizer' | 'participant' | 'any';
+export type CallRoleFilter = "organizer" | "participant" | "any";
 
 export interface ListCallsQuery extends PaginationQuery {
   status?: CallStatus;
@@ -198,4 +203,4 @@ export interface ListInvitationsQuery extends PaginationQuery {
   status?: InvitationStatus;
 }
 
-export type LeaveReason = 'USER_LEFT' | 'TAB_CLOSED' | 'NETWORK_LOST';
+export type LeaveReason = "USER_LEFT" | "TAB_CLOSED" | "NETWORK_LOST";

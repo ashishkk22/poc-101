@@ -1,6 +1,6 @@
-import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
-import { ApiError, ErrorCode } from '@/lib/errors';
-import { handleSessionExpiry, isSessionExpiry } from '@/lib/auth/session-expiry';
+import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
+import { ApiError, ErrorCode } from "@/lib/errors";
+import { handleSessionExpiry, isSessionExpiry } from "@/lib/auth/sessionExpiry";
 
 /**
  * Server state lives here and nowhere else.
@@ -43,7 +43,8 @@ export function createQueryClient(): QueryClient {
    * carrying where they were headed.
    */
   const onError = (error: unknown): void => {
-    if (isSessionExpiry(error)) handleSessionExpiry(queryClient, queryKeys.session);
+    if (isSessionExpiry(error))
+      handleSessionExpiry(queryClient, queryKeys.session);
   };
 
   const queryClient: QueryClient = new QueryClient({
@@ -64,21 +65,23 @@ export function createQueryClient(): QueryClient {
 }
 
 export const queryKeys = {
-  session: ['session'] as const,
-  me: ['me'] as const,
-  calls: (params?: unknown) => ['calls', 'page', params ?? {}] as const,
+  session: ["session"] as const,
+  me: ["me"] as const,
+  calls: (params?: unknown) => ["calls", "page", params ?? {}] as const,
   /**
    * Infinite lists must not share a key with single-page reads of the same
    * filters: the cache entry holds `{ pages, pageParams }` for one and a bare
    * page for the other, and one observer would overwrite the other's shape.
    */
-  callsInfinite: (params?: unknown) => ['calls', 'infinite', params ?? {}] as const,
-  call: (callId: string) => ['call', callId] as const,
+  callsInfinite: (params?: unknown) =>
+    ["calls", "infinite", params ?? {}] as const,
+  call: (callId: string) => ["call", callId] as const,
   invitations: (callId: string, params?: unknown) =>
-    ['call', callId, 'invitations', params ?? {}] as const,
+    ["call", callId, "invitations", params ?? {}] as const,
   attendance: (callId: string, params?: unknown) =>
-    ['call', callId, 'attendance', params ?? {}] as const,
-  transcript: (callId: string) => ['call', callId, 'transcript'] as const,
-  audit: (callId: string, params?: unknown) => ['call', callId, 'audit', params ?? {}] as const,
-  userLookup: (email: string) => ['users', 'lookup', email] as const,
+    ["call", callId, "attendance", params ?? {}] as const,
+  transcript: (callId: string) => ["call", callId, "transcript"] as const,
+  audit: (callId: string, params?: unknown) =>
+    ["call", callId, "audit", params ?? {}] as const,
+  userLookup: (email: string) => ["users", "lookup", email] as const,
 } as const;

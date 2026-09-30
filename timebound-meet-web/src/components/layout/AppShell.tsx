@@ -7,8 +7,8 @@ import {
 } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { BrandLink } from "@/components/common/Brand";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/Button";
+import { Separator } from "@/components/ui/Separator";
 import { useCurrentUser, useSignOut } from "@/features/auth";
 import { notify } from "@/lib/toast";
 import { config } from "@/lib/config/env";

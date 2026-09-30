@@ -1,2 +1,2 @@
-export { useAttendance, useInfiniteAttendance } from './queries';
-export { AttendanceTable } from './attendance-table';
+export { useAttendance, useInfiniteAttendance } from "./queries";
+export { AttendanceTable } from "./AttendanceTable";

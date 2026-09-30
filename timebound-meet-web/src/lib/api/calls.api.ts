@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient } from "./client";
 import type {
   Call,
   CallParticipant,
@@ -8,7 +8,7 @@ import type {
   LeaveResult,
   ListCallsQuery,
   PaginatedResponse,
-} from './types';
+} from "./types";
 
 export interface CreateCallInput {
   title: string;
@@ -18,10 +18,10 @@ export interface CreateCallInput {
 }
 
 export const callsApi = {
-  create: (input: CreateCallInput) => apiClient.post<Call>('/calls', input),
+  create: (input: CreateCallInput) => apiClient.post<Call>("/calls", input),
 
   list: (query: ListCallsQuery = {}, signal?: AbortSignal) =>
-    apiClient.getPage<PaginatedResponse<Call>>('/calls', {
+    apiClient.getPage<PaginatedResponse<Call>>("/calls", {
       query: { ...query },
       ...(signal ? { signal } : {}),
     }),
@@ -41,8 +41,10 @@ export const callsApi = {
   join: (callId: string, input: { deviceId?: string } = {}) =>
     apiClient.post<JoinResult>(`/calls/${callId}/join`, input),
 
-  heartbeat: (callId: string, input: { sessionId?: string; deviceId?: string } = {}) =>
-    apiClient.post<HeartbeatResult>(`/calls/${callId}/heartbeat`, input),
+  heartbeat: (
+    callId: string,
+    input: { sessionId?: string; deviceId?: string } = {},
+  ) => apiClient.post<HeartbeatResult>(`/calls/${callId}/heartbeat`, input),
 
   leave: (
     callId: string,
@@ -51,11 +53,14 @@ export const callsApi = {
   ) =>
     apiClient.post<LeaveResult>(
       `/calls/${callId}/leave`,
-      { reason: 'USER_LEFT', ...input },
+      { reason: "USER_LEFT", ...input },
       options.keepalive ? { keepalive: true } : {},
     ),
 
   /** Live roster: who is connected right now. */
   participants: (callId: string, signal?: AbortSignal) =>
-    apiClient.get<CallParticipant[]>(`/calls/${callId}/participants`, signal ? { signal } : {}),
+    apiClient.get<CallParticipant[]>(
+      `/calls/${callId}/participants`,
+      signal ? { signal } : {},
+    ),
 };

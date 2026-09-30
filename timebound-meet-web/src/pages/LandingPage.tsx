@@ -11,7 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import { BrandLink } from "@/components/common/Brand";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 import { useCurrentUser } from "@/features/auth";
 import { config } from "@/lib/config/env";
 

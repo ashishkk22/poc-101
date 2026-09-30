@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient } from "./client";
 import type {
   MyInvitation,
   CreatedInvitation,
@@ -6,7 +6,7 @@ import type {
   ListInvitationsQuery,
   PaginatedResponse,
   RevokedInvitation,
-} from './types';
+} from "./types";
 
 export interface CreateInvitationInput {
   participantId: string;
@@ -19,18 +19,28 @@ export const invitationsApi = {
   create: (callId: string, input: CreateInvitationInput) =>
     apiClient.post<CreatedInvitation>(`/calls/${callId}/invitations`, input),
 
-  listForCall: (callId: string, query: ListInvitationsQuery = {}, signal?: AbortSignal) =>
-    apiClient.getPage<PaginatedResponse<Invitation>>(`/calls/${callId}/invitations`, {
-      query: { ...query },
-      ...(signal ? { signal } : {}),
-    }),
+  listForCall: (
+    callId: string,
+    query: ListInvitationsQuery = {},
+    signal?: AbortSignal,
+  ) =>
+    apiClient.getPage<PaginatedResponse<Invitation>>(
+      `/calls/${callId}/invitations`,
+      {
+        query: { ...query },
+        ...(signal ? { signal } : {}),
+      },
+    ),
 
   getById: (invitationId: string, signal?: AbortSignal) =>
-    apiClient.get<Invitation>(`/invitations/${invitationId}`, signal ? { signal } : {}),
+    apiClient.get<Invitation>(
+      `/invitations/${invitationId}`,
+      signal ? { signal } : {},
+    ),
 
   /** The caller's own invitations — "you have been invited to these". */
   listMine: (query: ListInvitationsQuery = {}, signal?: AbortSignal) =>
-    apiClient.getPage<PaginatedResponse<MyInvitation>>('/invitations/mine', {
+    apiClient.getPage<PaginatedResponse<MyInvitation>>("/invitations/mine", {
       query: { ...query },
       ...(signal ? { signal } : {}),
     }),

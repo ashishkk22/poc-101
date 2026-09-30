@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { PageHeader } from "@/components/common/PageHeader";
 import { CallForm, useCreateCall } from "@/features/calls";
 import { notify } from "@/lib/toast";

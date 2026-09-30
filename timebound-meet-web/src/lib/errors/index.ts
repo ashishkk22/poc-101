@@ -1,7 +1,7 @@
-export { ApiError, ErrorCode, type ApiErrorDetail } from './api-error';
+export { ApiError, ErrorCode, type ApiErrorDetail } from "./apiError";
 export {
   toDisplayError,
   toErrorMessage,
   isAuthExpired,
   type DisplayError,
-} from './error-messages';
+} from "./errorMessages";

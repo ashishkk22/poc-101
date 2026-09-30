@@ -1,2 +1,2 @@
-export { useTranscript } from './queries';
-export { TranscriptView, TranscriptStatusBadge } from './transcript-view';
+export { useTranscript } from "./queries";
+export { TranscriptView, TranscriptStatusBadge } from "./TranscriptView";

@@ -1,7 +1,7 @@
-import * as SelectPrimitive from '@radix-ui/react-select';
-import { Check, ChevronDown } from 'lucide-react';
-import type { ComponentProps } from 'react';
-import { cn } from '@/lib/utils';
+import * as SelectPrimitive from "@radix-ui/react-select";
+import { Check, ChevronDown } from "lucide-react";
+import type { ComponentProps } from "react";
+import { cn } from "@/lib/utils";
 
 export const Select = SelectPrimitive.Root;
 export const SelectValue = SelectPrimitive.Value;
@@ -10,12 +10,12 @@ export function SelectTrigger({
   className,
   children,
   ...props
-}: ComponentProps<typeof SelectPrimitive.Trigger>): React.JSX.Element {
+}: ComponentProps<typeof SelectPrimitive.Trigger>) {
   return (
     <SelectPrimitive.Trigger
       className={cn(
-        'flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs',
-        'focus:outline-2 focus:outline-offset-2 focus:outline-[var(--ring)] disabled:cursor-not-allowed disabled:opacity-50',
+        "flex h-9 w-full items-center justify-between gap-2 rounded-md border border-input bg-card px-3 py-2 text-sm shadow-xs",
+        "focus:outline-2 focus:outline-offset-2 focus:outline-[var(--ring)] disabled:cursor-not-allowed disabled:opacity-50",
         className,
       )}
       {...props}
@@ -31,20 +31,22 @@ export function SelectTrigger({
 export function SelectContent({
   className,
   children,
-  position = 'popper',
+  position = "popper",
   ...props
-}: ComponentProps<typeof SelectPrimitive.Content>): React.JSX.Element {
+}: ComponentProps<typeof SelectPrimitive.Content>) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         position={position}
         className={cn(
-          'relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md',
+          "relative z-50 max-h-72 min-w-[8rem] overflow-hidden rounded-md border border-border bg-popover text-popover-foreground shadow-md",
           className,
         )}
         {...props}
       >
-        <SelectPrimitive.Viewport className="p-1">{children}</SelectPrimitive.Viewport>
+        <SelectPrimitive.Viewport className="p-1">
+          {children}
+        </SelectPrimitive.Viewport>
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   );
@@ -54,12 +56,12 @@ export function SelectItem({
   className,
   children,
   ...props
-}: ComponentProps<typeof SelectPrimitive.Item>): React.JSX.Element {
+}: ComponentProps<typeof SelectPrimitive.Item>) {
   return (
     <SelectPrimitive.Item
       className={cn(
-        'relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none',
-        'focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none",
+        "focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         className,
       )}
       {...props}

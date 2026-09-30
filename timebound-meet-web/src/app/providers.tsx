@@ -6,7 +6,7 @@ import { ErrorBoundary } from "@/components/common/ErrorBoundary";
 import { CallSessionProvider } from "@/features/join";
 import { useCurrentUser } from "@/features/auth";
 import { RealtimeProvider } from "@/lib/realtime";
-import { ThemeProvider } from "@/lib/theme/theme-provider";
+import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { createQueryClient } from "./queryClient";
 
 /**

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Clock } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/Alert";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { DemoCredentials } from "@/components/common/DemoCredentials";
 import { LoginForm, useCurrentUser } from "@/features/auth";

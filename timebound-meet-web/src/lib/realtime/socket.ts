@@ -1,6 +1,6 @@
-import { io, type Socket } from 'socket.io-client';
-import { config } from '../config/env';
-import type { SubscribeResult } from './events';
+import { io, type Socket } from "socket.io-client";
+import { config } from "../config/env";
+import type { SubscribeResult } from "./events";
 
 /**
  * A single shared Socket.IO connection.
@@ -17,7 +17,7 @@ export function getSocket(): Socket {
   socket = io(config.apiBaseUrl, {
     path: config.realtimePath,
     withCredentials: true,
-    transports: ['websocket', 'polling'],
+    transports: ["websocket", "polling"],
     autoConnect: false,
     reconnectionAttempts: Number.POSITIVE_INFINITY,
     reconnectionDelay: 1000,
@@ -47,17 +47,20 @@ export function disconnectSocket(): void {
  * mesh uses to decide who to offer to.
  */
 export function subscribeToCall(callId: string): Promise<SubscribeResult> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const active = getSocket();
     if (!active.connected) {
-      resolve({ ok: false, code: 'NOT_CONNECTED' });
+      resolve({ ok: false, code: "NOT_CONNECTED" });
       return;
     }
 
-    const timeout = setTimeout(() => resolve({ ok: false, code: 'TIMEOUT' }), 5000);
-    active.emit('call:subscribe', { callId }, (ack: SubscribeResult) => {
+    const timeout = setTimeout(
+      () => resolve({ ok: false, code: "TIMEOUT" }),
+      5000,
+    );
+    active.emit("call:subscribe", { callId }, (ack: SubscribeResult) => {
       clearTimeout(timeout);
-      resolve(ack ?? { ok: false, code: 'NO_ACK' });
+      resolve(ack ?? { ok: false, code: "NO_ACK" });
     });
   });
 }
@@ -70,7 +73,10 @@ export function emitSignal(event: string, payload: unknown): void {
 }
 
 /** Subscribes to a raw socket event, returning an unsubscribe function. */
-export function onSocketEvent<T>(event: string, handler: (payload: T) => void): () => void {
+export function onSocketEvent<T>(
+  event: string,
+  handler: (payload: T) => void,
+): () => void {
   const active = getSocket();
   active.on(event, handler as (...args: unknown[]) => void);
   return () => active.off(event, handler as (...args: unknown[]) => void);
@@ -79,5 +85,5 @@ export function onSocketEvent<T>(event: string, handler: (payload: T) => void): 
 export function unsubscribeFromCall(callId: string): void {
   const active = socket;
   if (!active?.connected) return;
-  active.emit('call:unsubscribe', { callId });
+  active.emit("call:unsubscribe", { callId });
 }

@@ -1,10 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { authApi, type SignInInput, type SignUpInput } from '@/lib/api';
-import type { User } from '@/lib/api/types';
-import { ApiError, ErrorCode } from '@/lib/errors';
-import { disconnectSocket } from '@/lib/realtime/socket';
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { authApi, type SignInInput, type SignUpInput } from "@/lib/api";
+import type { User } from "@/lib/api/types";
+import { ApiError, ErrorCode } from "@/lib/errors";
+import { disconnectSocket } from "@/lib/realtime/socket";
 
-export const sessionQueryKey = ['session'] as const;
+export const sessionQueryKey = ["session"] as const;
 
 /**
  * The session is whatever the backend says it is.
@@ -34,7 +34,10 @@ export function useSession() {
      */
     refetchOnWindowFocus: false,
     retry: (failureCount, error) => {
-      if (ApiError.isApiError(error) && error.code === ErrorCode.NETWORK_ERROR) {
+      if (
+        ApiError.isApiError(error) &&
+        error.code === ErrorCode.NETWORK_ERROR
+      ) {
         return failureCount < 2;
       }
       return false;

@@ -1,5 +1,5 @@
 import { KeyRound } from "lucide-react";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
 
 const DEMO_PASSWORD = "SyncDemo123!";
 const DEMO_ACCOUNTS = [

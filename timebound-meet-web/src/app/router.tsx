@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { createBrowserRouter } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { ProtectedRoute } from "@/components/layout/protected-route";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 
 /**
  * Pages are split per route so the join and call screens — the ones a

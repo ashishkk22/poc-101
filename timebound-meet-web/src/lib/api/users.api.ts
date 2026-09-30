@@ -1,8 +1,9 @@
-import { apiClient } from './client';
-import type { User } from './types';
+import { apiClient } from "./client";
+import type { User } from "./types";
 
 export const usersApi = {
-  me: (signal?: AbortSignal) => apiClient.get<User>('/users/me', signal ? { signal } : {}),
+  me: (signal?: AbortSignal) =>
+    apiClient.get<User>("/users/me", signal ? { signal } : {}),
 
   /**
    * Exact-email lookup so an organizer can resolve someone to invite.
@@ -10,5 +11,8 @@ export const usersApi = {
    * support prefix search.
    */
   lookupByEmail: (email: string, signal?: AbortSignal) =>
-    apiClient.get<User | null>('/users/lookup', { query: { email }, ...(signal ? { signal } : {}) }),
+    apiClient.get<User | null>("/users/lookup", {
+      query: { email },
+      ...(signal ? { signal } : {}),
+    }),
 };

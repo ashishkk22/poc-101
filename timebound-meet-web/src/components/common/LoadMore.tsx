@@ -1,5 +1,5 @@
 import { ChevronDown } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/Button";
 
 type LoadMoreProps = {
   hasMore: boolean;

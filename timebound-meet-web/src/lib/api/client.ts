@@ -1,5 +1,5 @@
-import { API_PREFIX, AUTH_PREFIX, config } from '../config/env';
-import { ApiError, type ApiErrorDetail } from '../errors/api-error';
+import { API_PREFIX, AUTH_PREFIX, config } from "../config/env";
+import { ApiError, type ApiErrorDetail } from "../errors/apiError";
 
 /**
  * The one place that talks to the backend.
@@ -12,7 +12,7 @@ import { ApiError, type ApiErrorDetail } from '../errors/api-error';
 type QueryValue = string | number | boolean | undefined | null;
 
 export interface RequestOptions {
-  method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
   query?: Record<string, QueryValue>;
   signal?: AbortSignal;
@@ -22,14 +22,18 @@ export interface RequestOptions {
   keepalive?: boolean;
 }
 
-function buildUrl(path: string, query?: Record<string, QueryValue>, absolutePath = false): string {
+function buildUrl(
+  path: string,
+  query?: Record<string, QueryValue>,
+  absolutePath = false,
+): string {
   const url = new URL(
-    `${absolutePath ? '' : API_PREFIX}${path.startsWith('/') ? path : `/${path}`}`,
+    `${absolutePath ? "" : API_PREFIX}${path.startsWith("/") ? path : `/${path}`}`,
     config.apiBaseUrl,
   );
 
   for (const [key, value] of Object.entries(query ?? {})) {
-    if (value === undefined || value === null || value === '') continue;
+    if (value === undefined || value === null || value === "") continue;
     url.searchParams.set(key, String(value));
   }
 
@@ -38,7 +42,7 @@ function buildUrl(path: string, query?: Record<string, QueryValue>, absolutePath
 
 function newRequestId(): string {
   const random = globalThis.crypto?.randomUUID?.();
-  return `web_${(random ?? Math.random().toString(36).slice(2)).replace(/-/g, '')}`;
+  return `web_${(random ?? Math.random().toString(36).slice(2)).replace(/-/g, "")}`;
 }
 
 /**
@@ -51,7 +55,12 @@ function newRequestId(): string {
  * "Bad Request", so both are handled here rather than at the call sites.
  */
 interface V1ErrorEnvelope {
-  error?: { code?: string; message?: string; requestId?: string; details?: ApiErrorDetail[] };
+  error?: {
+    code?: string;
+    message?: string;
+    requestId?: string;
+    details?: ApiErrorDetail[];
+  };
 }
 
 interface AuthErrorEnvelope {
@@ -61,7 +70,7 @@ interface AuthErrorEnvelope {
 
 /** `Retry-After` is exposed by the backend's CORS config; use it, don't guess. */
 function retryAfterSeconds(response: Response): number | null {
-  const header = response.headers.get('Retry-After');
+  const header = response.headers.get("Retry-After");
   if (!header) return null;
 
   const seconds = Number.parseInt(header, 10);
@@ -69,7 +78,7 @@ function retryAfterSeconds(response: Response): number | null {
 }
 
 async function toApiError(response: Response): Promise<ApiError> {
-  const headerRequestId = response.headers.get('X-Request-Id');
+  const headerRequestId = response.headers.get("X-Request-Id");
 
   let body: (V1ErrorEnvelope & AuthErrorEnvelope) | null = null;
   try {
@@ -80,7 +89,8 @@ async function toApiError(response: Response): Promise<ApiError> {
 
   const v1 = body?.error;
   const code = v1?.code ?? body?.code ?? `HTTP_${response.status}`;
-  const message = v1?.message ?? body?.message ?? response.statusText ?? 'Request failed.';
+  const message =
+    v1?.message ?? body?.message ?? response.statusText ?? "Request failed.";
 
   return new ApiError({
     code,
@@ -92,14 +102,24 @@ async function toApiError(response: Response): Promise<ApiError> {
   });
 }
 
-export async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const { method = 'GET', body, query, signal, absolutePath = false, keepalive } = options;
+export async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
+  const {
+    method = "GET",
+    body,
+    query,
+    signal,
+    absolutePath = false,
+    keepalive,
+  } = options;
 
-  const headers: Record<string, string> = { Accept: 'application/json' };
+  const headers: Record<string, string> = { Accept: "application/json" };
   // The backend echoes this back and logs against it, so a user-reported
   // reference can be traced end to end.
-  headers['X-Request-Id'] = newRequestId();
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  headers["X-Request-Id"] = newRequestId();
+  if (body !== undefined) headers["Content-Type"] = "application/json";
 
   let response: Response;
   try {
@@ -107,13 +127,14 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
       method,
       headers,
       // Credentialed: the Better Auth session cookie rides along.
-      credentials: 'include',
+      credentials: "include",
       ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
       ...(signal ? { signal } : {}),
       ...(keepalive ? { keepalive: true } : {}),
     });
   } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') throw error;
+    if (error instanceof DOMException && error.name === "AbortError")
+      throw error;
     throw ApiError.network();
   }
 
@@ -126,26 +147,34 @@ export async function request<T>(path: string, options: RequestOptions = {}): Pr
   try {
     return JSON.parse(text) as T;
   } catch {
-    throw ApiError.network('The server returned an unreadable response.');
+    throw ApiError.network("The server returned an unreadable response.");
   }
 }
 
 /** Unwraps the `{ data }` envelope every successful v1 response uses. */
-async function requestData<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function requestData<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const payload = await request<{ data: T }>(path, options);
   return payload.data;
 }
 
 export const apiClient = {
   /** `{ data: T }` responses. */
-  get: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>) =>
-    requestData<T>(path, { ...options, method: 'GET' }),
-  post: <T>(path: string, body?: unknown, options?: Omit<RequestOptions, 'method' | 'body'>) =>
-    requestData<T>(path, { ...options, method: 'POST', body }),
+  get: <T>(path: string, options?: Omit<RequestOptions, "method" | "body">) =>
+    requestData<T>(path, { ...options, method: "GET" }),
+  post: <T>(
+    path: string,
+    body?: unknown,
+    options?: Omit<RequestOptions, "method" | "body">,
+  ) => requestData<T>(path, { ...options, method: "POST", body }),
 
   /** `{ items, nextCursor }` responses, which carry no envelope. */
-  getPage: <T>(path: string, options?: Omit<RequestOptions, 'method' | 'body'>) =>
-    request<T>(path, { ...options, method: 'GET' }),
+  getPage: <T>(
+    path: string,
+    options?: Omit<RequestOptions, "method" | "body">,
+  ) => request<T>(path, { ...options, method: "GET" }),
 
   /** Better Auth lives outside /api/v1 and answers with its own shapes. */
   auth: <T>(path: string, options: RequestOptions = {}) =>

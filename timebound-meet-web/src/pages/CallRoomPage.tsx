@@ -10,10 +10,10 @@ import {
   Users,
 } from "lucide-react";
 import { Link, Navigate, useParams } from "react-router-dom";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/Card";
 import { BrandMark, BrandWordmark } from "@/components/common/Brand";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { ConfirmDialog } from "@/components/common/ConfirmDialog";

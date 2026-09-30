@@ -1,7 +1,7 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Component, type ErrorInfo, type ReactNode } from "react";
+import { RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 
 interface State {
   error: Error | null;
@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
   }
 
   override componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('Unhandled UI error', error, info.componentStack);
+    console.error("Unhandled UI error", error, info.componentStack);
   }
 
   override render(): ReactNode {
@@ -36,8 +36,8 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, State> {
           </CardHeader>
           <CardContent className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              This page ran into trouble. A quick reload usually sorts it, and nothing you've
-              done has been lost.
+              This page ran into trouble. A quick reload usually sorts it, and
+              nothing you've done has been lost.
             </p>
             <Button onClick={() => window.location.reload()}>
               <RefreshCw aria-hidden="true" />

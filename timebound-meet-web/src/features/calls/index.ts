@@ -6,9 +6,9 @@ export {
   useCreateCall,
   useCancelCall,
   useEndCall,
-} from './queries';
-export { CallCard } from './call-card';
-export { CallSummary } from './call-summary';
-export { JoinCallButton, canEnter } from './join-call-button';
-export { CallStatusBadge } from './call-status-badge';
-export { CallForm } from './call-form';
+} from "./queries";
+export { CallCard } from "./CallCard";
+export { CallSummary } from "./CallSummary";
+export { JoinCallButton, canEnter } from "./JoinCallButton";
+export { CallStatusBadge } from "./CallStatusBadge";
+export { CallForm } from "./CallForm";

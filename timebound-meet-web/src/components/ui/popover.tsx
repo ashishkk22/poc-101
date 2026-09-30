@@ -11,7 +11,7 @@ export function PopoverContent({
   align = "start",
   sideOffset = 4,
   ...props
-}: ComponentProps<typeof PopoverPrimitive.Content>): React.JSX.Element {
+}: ComponentProps<typeof PopoverPrimitive.Content>) {
   return (
     <PopoverPrimitive.Portal>
       <PopoverPrimitive.Content

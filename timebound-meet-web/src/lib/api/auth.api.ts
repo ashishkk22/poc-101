@@ -1,5 +1,5 @@
-import { apiClient } from './client';
-import type { User } from './types';
+import { apiClient } from "./client";
+import type { User } from "./types";
 
 /**
  * Better Auth session endpoints.
@@ -29,22 +29,22 @@ export const MIN_PASSWORD_LENGTH = 12;
 
 export const authApi = {
   async signIn(input: SignInInput): Promise<void> {
-    await apiClient.auth<unknown>('/sign-in/email', {
-      method: 'POST',
+    await apiClient.auth<unknown>("/sign-in/email", {
+      method: "POST",
       body: { email: input.email, password: input.password },
     });
   },
 
   /** Sign-up establishes a session immediately; no second sign-in is needed. */
   async signUp(input: SignUpInput): Promise<void> {
-    await apiClient.auth<unknown>('/sign-up/email', {
-      method: 'POST',
+    await apiClient.auth<unknown>("/sign-up/email", {
+      method: "POST",
       body: { name: input.name, email: input.email, password: input.password },
     });
   },
 
   async signOut(): Promise<void> {
-    await apiClient.auth<unknown>('/sign-out', { method: 'POST', body: {} });
+    await apiClient.auth<unknown>("/sign-out", { method: "POST", body: {} });
   },
 
   /**
@@ -52,12 +52,19 @@ export const authApi = {
    * Better Auth answers a signed-out `get-session` with `null` and HTTP 200.
    */
   async getSession(signal?: AbortSignal): Promise<User | null> {
-    const response = await apiClient.auth<AuthSessionResponse | null>('/get-session', {
-      method: 'GET',
-      ...(signal ? { signal } : {}),
-    });
+    const response = await apiClient.auth<AuthSessionResponse | null>(
+      "/get-session",
+      {
+        method: "GET",
+        ...(signal ? { signal } : {}),
+      },
+    );
 
     if (!response?.user) return null;
-    return { id: response.user.id, email: response.user.email, name: response.user.name };
+    return {
+      id: response.user.id,
+      email: response.user.email,
+      name: response.user.name,
+    };
   },
 };

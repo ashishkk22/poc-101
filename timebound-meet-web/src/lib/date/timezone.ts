@@ -1,4 +1,4 @@
-import { TZDate } from '@date-fns/tz';
+import { TZDate } from "@date-fns/tz";
 
 /**
  * Wall-clock time in a named zone, and back.
@@ -14,9 +14,9 @@ import { TZDate } from '@date-fns/tz';
 /** The viewer's own zone, which is what times are displayed in by default. */
 export function localTimeZone(): string {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
   } catch {
-    return 'UTC';
+    return "UTC";
   }
 }
 
@@ -25,7 +25,7 @@ export function supportedTimeZones(): string[] {
   try {
     const supported = (
       Intl as unknown as { supportedValuesOf?: (key: string) => string[] }
-    ).supportedValuesOf?.('timeZone');
+    ).supportedValuesOf?.("timeZone");
 
     if (supported?.length) {
       // The catalogue holds canonical ids, but a browser may report its own
@@ -40,12 +40,12 @@ export function supportedTimeZones(): string[] {
 
   // Older browsers have no catalogue to offer; at least let someone pick
   // their own zone or UTC rather than facing an empty list.
-  return [...new Set(['UTC', localTimeZone()])];
+  return [...new Set(["UTC", localTimeZone()])];
 }
 
 export function isValidTimeZone(timeZone: string): boolean {
   try {
-    new Intl.DateTimeFormat('en-US', { timeZone });
+    new Intl.DateTimeFormat("en-US", { timeZone });
     return true;
   } catch {
     return false;
@@ -58,32 +58,35 @@ export function isValidTimeZone(timeZone: string): boolean {
  * Computed for *now*, so a zone in daylight saving reads as it currently is
  * rather than as its standard offset.
  */
-export function zoneOffsetLabel(timeZone: string, at: Date = new Date()): string {
+export function zoneOffsetLabel(
+  timeZone: string,
+  at: Date = new Date(),
+): string {
   try {
-    const formatted = new Intl.DateTimeFormat('en-US', {
+    const formatted = new Intl.DateTimeFormat("en-US", {
       timeZone,
-      timeZoneName: 'longOffset',
+      timeZoneName: "longOffset",
     })
       .formatToParts(at)
-      .find((part) => part.type === 'timeZoneName')?.value;
+      .find(part => part.type === "timeZoneName")?.value;
 
     // Intl renders UTC itself as "GMT" with no offset.
-    if (!formatted || formatted === 'GMT') return 'UTC+00:00';
-    return formatted.replace('GMT', 'UTC');
+    if (!formatted || formatted === "GMT") return "UTC+00:00";
+    return formatted.replace("GMT", "UTC");
   } catch {
-    return 'UTC';
+    return "UTC";
   }
 }
 
 /** "Asia/Kolkata" → "Kolkata", for a picker that reads like a place list. */
 export function zoneCity(timeZone: string): string {
-  const [, ...rest] = timeZone.split('/');
+  const [, ...rest] = timeZone.split("/");
   const city = rest.length > 0 ? rest[rest.length - 1] : timeZone;
-  return (city ?? timeZone).replace(/_/g, ' ');
+  return (city ?? timeZone).replace(/_/g, " ");
 }
 
 export function zoneRegion(timeZone: string): string {
-  const [region] = timeZone.split('/');
+  const [region] = timeZone.split("/");
   return region ?? timeZone;
 }
 
@@ -98,7 +101,7 @@ const INPUT_PATTERN = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/;
  */
 export function zonedInputToIso(value: string, timeZone: string): string {
   const match = INPUT_PATTERN.exec(value);
-  if (!match) return '';
+  if (!match) return "";
 
   const [, year, month, day, hour, minute] = match;
 
@@ -114,74 +117,81 @@ export function zonedInputToIso(value: string, timeZone: string): string {
     );
 
     const instant = zoned.getTime();
-    return Number.isFinite(instant) ? new Date(instant).toISOString() : '';
+    return Number.isFinite(instant) ? new Date(instant).toISOString() : "";
   } catch {
-    return '';
+    return "";
   }
 }
 
 /** A UTC instant as the wall-clock time an input should show for `timeZone`. */
 export function isoToZonedInput(iso: string, timeZone: string): string {
   const instant = new Date(iso);
-  if (Number.isNaN(instant.getTime())) return '';
+  if (Number.isNaN(instant.getTime())) return "";
 
   try {
-    const parts = new Intl.DateTimeFormat('en-CA', {
+    const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone,
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
     }).formatToParts(instant);
 
-    const get = (type: string) => parts.find((part) => part.type === type)?.value ?? '';
+    const get = (type: string) =>
+      parts.find(part => part.type === type)?.value ?? "";
     // `en-CA` renders midnight as 24; the input expects 00.
-    const hour = get('hour') === '24' ? '00' : get('hour');
+    const hour = get("hour") === "24" ? "00" : get("hour");
 
-    return `${get('year')}-${get('month')}-${get('day')}T${hour}:${get('minute')}`;
+    return `${get("year")}-${get("month")}-${get("day")}T${hour}:${get("minute")}`;
   } catch {
-    return '';
+    return "";
   }
 }
 
 /** A UTC instant rendered as a readable time in a specific zone. */
-export function formatInZone(iso: string | null | undefined, timeZone: string): string {
-  if (!iso) return '—';
+export function formatInZone(
+  iso: string | null | undefined,
+  timeZone: string,
+): string {
+  if (!iso) return "—";
   const instant = new Date(iso);
-  if (Number.isNaN(instant.getTime())) return '—';
+  if (Number.isNaN(instant.getTime())) return "—";
 
   try {
     return new Intl.DateTimeFormat(undefined, {
       timeZone,
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
     }).format(instant);
   } catch {
-    return '—';
+    return "—";
   }
 }
 
 /** Just the clock face, for showing the same moment in a second zone. */
-export function formatTimeInZone(iso: string | null | undefined, timeZone: string): string {
-  if (!iso) return '—';
+export function formatTimeInZone(
+  iso: string | null | undefined,
+  timeZone: string,
+): string {
+  if (!iso) return "—";
   const instant = new Date(iso);
-  if (Number.isNaN(instant.getTime())) return '—';
+  if (Number.isNaN(instant.getTime())) return "—";
 
   try {
     return new Intl.DateTimeFormat(undefined, {
       timeZone,
-      hour: '2-digit',
-      minute: '2-digit',
+      hour: "2-digit",
+      minute: "2-digit",
       hour12: false,
     }).format(instant);
   } catch {
-    return '—';
+    return "—";
   }
 }
 
@@ -192,7 +202,11 @@ export function formatTimeInZone(iso: string | null | undefined, timeZone: strin
  * are treated as the same thing and the interface does not tell somebody in
  * London what time it is in London.
  */
-export function zonesDiffer(a: string, b: string, at: Date = new Date()): boolean {
+export function zonesDiffer(
+  a: string,
+  b: string,
+  at: Date = new Date(),
+): boolean {
   if (a === b) return false;
   return zoneOffsetLabel(a, at) !== zoneOffsetLabel(b, at);
 }

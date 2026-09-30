@@ -1,11 +1,11 @@
-import { apiClient } from './client';
+import { apiClient } from "./client";
 import type {
   HeartbeatResult,
   JoinResult,
   LeaveReason,
   LeaveResult,
   ResolvedLink,
-} from './types';
+} from "./types";
 
 /**
  * Join endpoints.
@@ -23,11 +23,20 @@ export const joinApi = {
     apiClient.post<ResolvedLink>(`/join/${encodeURIComponent(token)}/resolve`),
 
   authorize: (token: string, input: { deviceId?: string } = {}) =>
-    apiClient.post<JoinResult>(`/join/${encodeURIComponent(token)}/authorize`, input),
+    apiClient.post<JoinResult>(
+      `/join/${encodeURIComponent(token)}/authorize`,
+      input,
+    ),
 
   /** Revalidates authorization as well as liveness — a revoke is denied here. */
-  heartbeat: (token: string, input: { sessionId?: string; deviceId?: string } = {}) =>
-    apiClient.post<HeartbeatResult>(`/join/${encodeURIComponent(token)}/heartbeat`, input),
+  heartbeat: (
+    token: string,
+    input: { sessionId?: string; deviceId?: string } = {},
+  ) =>
+    apiClient.post<HeartbeatResult>(
+      `/join/${encodeURIComponent(token)}/heartbeat`,
+      input,
+    ),
 
   /**
    * `keepalive` lets the request survive the tab closing, so a participant who
@@ -40,7 +49,7 @@ export const joinApi = {
   ) =>
     apiClient.post<LeaveResult>(
       `/join/${encodeURIComponent(token)}/leave`,
-      { reason: 'USER_LEFT', ...input },
+      { reason: "USER_LEFT", ...input },
       options.keepalive ? { keepalive: true } : {},
     ),
 };

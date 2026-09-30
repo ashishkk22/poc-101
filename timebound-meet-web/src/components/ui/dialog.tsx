@@ -1,7 +1,7 @@
-import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
-import type { ComponentProps } from 'react';
-import { cn } from '@/lib/utils';
+import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { X } from "lucide-react";
+import type { ComponentProps } from "react";
+import { cn } from "@/lib/utils";
 
 export const Dialog = DialogPrimitive.Root;
 export const DialogTrigger = DialogPrimitive.Trigger;
@@ -11,14 +11,14 @@ export function DialogContent({
   className,
   children,
   ...props
-}: ComponentProps<typeof DialogPrimitive.Content>): React.JSX.Element {
+}: ComponentProps<typeof DialogPrimitive.Content>) {
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[1px] data-[state=open]:animate-in data-[state=closed]:animate-out" />
       <DialogPrimitive.Content
         className={cn(
-          'fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4',
-          'rounded-xl border border-border bg-card p-6 shadow-lg focus:outline-none',
+          "fixed left-1/2 top-1/2 z-50 grid w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 gap-4",
+          "rounded-xl border border-border bg-card p-6 shadow-lg focus:outline-none",
           className,
         )}
         {...props}
@@ -35,14 +35,22 @@ export function DialogContent({
   );
 }
 
-export function DialogHeader({ className, ...props }: ComponentProps<'div'>): React.JSX.Element {
-  return <div className={cn('flex flex-col gap-1.5 text-left', className)} {...props} />;
-}
-
-export function DialogFooter({ className, ...props }: ComponentProps<'div'>): React.JSX.Element {
+export function DialogHeader({ className, ...props }: ComponentProps<"div">) {
   return (
     <div
-      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
+      className={cn("flex flex-col gap-1.5 text-left", className)}
+      {...props}
+    />
+  );
+}
+
+export function DialogFooter({ className, ...props }: ComponentProps<"div">) {
+  return (
+    <div
+      className={cn(
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        className,
+      )}
       {...props}
     />
   );
@@ -51,10 +59,13 @@ export function DialogFooter({ className, ...props }: ComponentProps<'div'>): Re
 export function DialogTitle({
   className,
   ...props
-}: ComponentProps<typeof DialogPrimitive.Title>): React.JSX.Element {
+}: ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
-      className={cn('text-lg font-semibold leading-none tracking-tight', className)}
+      className={cn(
+        "text-lg font-semibold leading-none tracking-tight",
+        className,
+      )}
       {...props}
     />
   );
@@ -63,10 +74,10 @@ export function DialogTitle({
 export function DialogDescription({
   className,
   ...props
-}: ComponentProps<typeof DialogPrimitive.Description>): React.JSX.Element {
+}: ComponentProps<typeof DialogPrimitive.Description>) {
   return (
     <DialogPrimitive.Description
-      className={cn('text-sm text-muted-foreground', className)}
+      className={cn("text-sm text-muted-foreground", className)}
       {...props}
     />
   );

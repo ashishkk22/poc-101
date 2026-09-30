@@ -1,6 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/Card";
 import { PageHeader } from "@/components/common/PageHeader";
 import { AuditTimeline } from "@/features/audit";
 import { useCall } from "@/features/calls";
