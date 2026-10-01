@@ -1,11 +1,6 @@
 import { apiClient } from "./client";
-import type {
-  HeartbeatResult,
-  JoinResult,
-  LeaveReason,
-  LeaveResult,
-  ResolvedLink,
-} from "./types";
+import type { HeartbeatResult, JoinResult, LeaveResult, ResolvedLink } from "./types";
+import { LeaveReason } from "./types";
 
 /**
  * Join endpoints.
@@ -49,7 +44,7 @@ export const joinApi = {
   ) =>
     apiClient.post<LeaveResult>(
       `/join/${encodeURIComponent(token)}/leave`,
-      { reason: "USER_LEFT", ...input },
+      { reason: LeaveReason.USER_LEFT, ...input },
       options.keepalive ? { keepalive: true } : {},
     ),
 };

@@ -10,6 +10,7 @@ import {
 } from "./auditLabels";
 import { LoadMore } from "@/components/common/LoadMore";
 import { useInfiniteAuditEvents } from "./queries";
+import { AuditOutcome } from "@/lib/api/types";
 
 type AuditTimelineProps = {
   callId: string;
@@ -50,9 +51,9 @@ export function AuditTimeline({ callId }: AuditTimelineProps) {
             <li key={event.id} className="relative py-3">
               <span
                 className={`absolute -left-[1.6875rem] top-5 size-2.5 rounded-full ring-4 ring-[var(--background)] ${
-                  event.outcome === "DENIED"
+                  event.outcome === AuditOutcome.DENIED
                     ? "bg-destructive"
-                    : event.outcome === "FAILURE"
+                    : event.outcome === AuditOutcome.FAILURE
                       ? "bg-warning"
                       : "bg-success"
                 }`}

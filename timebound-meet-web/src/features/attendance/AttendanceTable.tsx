@@ -14,6 +14,7 @@ import { formatDateTime, formatDuration } from "@/lib/date/format";
 import type { AttendanceStatus } from "@/lib/api/types";
 import { LoadMore } from "@/components/common/LoadMore";
 import { useInfiniteAttendance } from "./queries";
+import { AttendanceSessionStatus } from "@/lib/api/types";
 
 type Status = { label: string; variant: "success" | "neutral" };
 
@@ -82,7 +83,7 @@ export function AttendanceTable({
               variant: "neutral" as const,
             };
             const connectedSessions =
-              record.sessions?.filter(session => session.status === "CONNECTED")
+              record.sessions?.filter(session => session.status === AttendanceSessionStatus.CONNECTED)
                 .length ?? 0;
 
             return (

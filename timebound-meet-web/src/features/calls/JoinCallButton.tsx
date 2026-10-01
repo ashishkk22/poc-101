@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button, type ButtonProps } from "@/components/ui/Button";
 import type { Call } from "@/lib/api/types";
 import { parse } from "@/lib/date/format";
+import { CallStatus } from "@/lib/api/types";
 
 /**
  * Entry to a call.
@@ -14,9 +15,9 @@ import { parse } from "@/lib/date/format";
  */
 export function canEnter(call: Call): boolean {
   if (
-    call.status === "CANCELLED" ||
-    call.status === "ENDED" ||
-    call.status === "DRAFT"
+    call.status === CallStatus.CANCELLED ||
+    call.status === CallStatus.ENDED ||
+    call.status === CallStatus.DRAFT
   ) {
     return false;
   }

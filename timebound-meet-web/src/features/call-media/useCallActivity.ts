@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RealtimeEvent, useRealtimeEvent } from "@/lib/realtime";
+import { CallEndReason } from "@/features/join";
 
 /**
  * What has happened in this call, as it happens.
@@ -9,12 +10,15 @@ import { RealtimeEvent, useRealtimeEvent } from "@/lib/realtime";
  * grants or withdraws anything, and a missed event costs a gap in the list,
  * never a wrong decision. The organizer's full audit trail remains the record.
  */
-export type ActivityKind =
-  | "JOINED"
-  | "LEFT"
-  | "REVOKED"
-  | "CALL_ENDED"
-  | "YOU_JOINED";
+/** What kind of thing happened in the call. */
+export const ActivityKind = {
+  JOINED: "JOINED",
+  LEFT: "LEFT",
+  REVOKED: "REVOKED",
+  CALL_ENDED: "CALL_ENDED",
+  YOU_JOINED: "YOU_JOINED",
+} as const;
+export type ActivityKind = (typeof ActivityKind)[keyof typeof ActivityKind];
 
 export interface ActivityEntry {
   id: string;
@@ -103,7 +107,7 @@ export function useCallActivity(options: UseCallActivityOptions) {
       if (payload.callId !== callId) return;
       add(
         "CALL_ENDED",
-        payload.reason === "CANCELLED"
+        payload.reason === CallEndReason.CANCELLED
           ? "The call was cancelled"
           : "The call was ended",
       );

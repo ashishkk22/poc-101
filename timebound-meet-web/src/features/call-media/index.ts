@@ -1,17 +1,18 @@
 export {
   useWebRtcMesh,
   MESH_LIMIT,
+  PeerState,
   type RemotePeer,
-  type PeerState,
 } from "./useWebRtcMesh";
 export {
   useLiveCaptions,
+  CaptionSupport,
   type CaptionLine,
   type LiveCaptionsState,
 } from "./useLiveCaptions";
 export {
   useCallActivity,
+  ActivityKind,
   type ActivityEntry,
-  type ActivityKind,
 } from "./useCallActivity";
 export { CallPeoplePanel } from "./CallPeoplePanel";

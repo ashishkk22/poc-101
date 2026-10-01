@@ -20,6 +20,8 @@ import type { MyInvitation, PaginatedResponse } from "@/lib/api/types";
 import { formatRelative, formatWindow, parse } from "@/lib/date/format";
 import { CallStatusBadge } from "@/features/calls";
 import { InvitationStatusBadge } from "./InvitationStatusBadge";
+import { CallStatus } from "@/lib/api/types";
+import { InvitationStatus } from "@/lib/api/types";
 
 /** The caller's own invitations, newest first. */
 export function useMyInvitations(limit = 25) {
@@ -49,13 +51,13 @@ function joinability(invitation: MyInvitation): {
 } {
   const { call, status, expiresAt } = invitation;
 
-  if (status === "REVOKED")
+  if (status === InvitationStatus.REVOKED)
     return { canJoin: false, note: "The host took this one back." };
-  if (status === "EXPIRED")
+  if (status === InvitationStatus.EXPIRED)
     return { canJoin: false, note: "This invite has run out." };
-  if (call.status === "CANCELLED")
+  if (call.status === CallStatus.CANCELLED)
     return { canJoin: false, note: "The host called this one off." };
-  if (call.status === "ENDED")
+  if (call.status === CallStatus.ENDED)
     return { canJoin: false, note: "This one has wrapped up." };
 
   const expiry = parse(expiresAt);

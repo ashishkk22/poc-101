@@ -37,7 +37,14 @@ const ICE_SERVERS: RTCIceServer[] = [
   { urls: ["stun:stun.l.google.com:19302", "stun:stun1.l.google.com:19302"] },
 ];
 
-export type PeerState = "CONNECTING" | "CONNECTED" | "RECONNECTING" | "FAILED";
+/** How a single peer connection is faring. */
+export const PeerState = {
+  CONNECTING: "CONNECTING",
+  CONNECTED: "CONNECTED",
+  RECONNECTING: "RECONNECTING",
+  FAILED: "FAILED",
+} as const;
+export type PeerState = (typeof PeerState)[keyof typeof PeerState];
 
 export interface RemotePeer extends PeerDescriptor {
   stream: MediaStream | null;

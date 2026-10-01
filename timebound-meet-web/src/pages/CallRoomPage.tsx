@@ -42,9 +42,12 @@ import {
 import { callsApi, joinApi } from "@/lib/api";
 import type { CallParticipant } from "@/lib/api/types";
 import { RealtimeEvent, useCallRoom, useRealtimeEvent } from "@/lib/realtime";
-import { toDisplayError } from "@/lib/errors";
+import { ErrorCode, toDisplayError } from "@/lib/errors";
 import { notify } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { CallRole } from "@/lib/api/types";
+import { CallEndReason, EntryDoor, TerminationKind } from "@/features/join";
+import { LeaveReason } from "@/lib/api/types";
 
 /**
  * Endings the participant chose.
@@ -122,7 +125,7 @@ function TerminationScreen({
 }): React.JSX.Element {
   const copy = TERMINATION_COPY[termination.kind];
   const detail =
-    termination.kind === "ERROR" ? toDisplayError(termination.error) : null;
+    termination.kind === TerminationKind.ERROR ? toDisplayError(termination.error) : null;
   const removed = copy.tone === "destructive";
 
   return (
@@ -223,7 +226,7 @@ export function CallRoomPage(): React.JSX.Element {
   >("participants");
 
   const active = Boolean(session);
-  const isOrganizer = session?.role === "ORGANIZER";
+  const isOrganizer = session?.role === CallRole.ORGANIZER;
 
   // The lobby is where these were decided; the call honours them.
   const media = useLocalMedia({
@@ -338,12 +341,22 @@ export function CallRoomPage(): React.JSX.Element {
         const code = (error as { code?: string }).code;
         media.stop();
 
-        if (code === "INVITE_REVOKED") terminate({ kind: "REVOKED" });
-        else if (code === "JOIN_WINDOW_CLOSED")
-          terminate({ kind: "WINDOW_CLOSED" });
-        else if (code === "CALL_CANCELLED")
-          terminate({ kind: "CALL_ENDED", reason: "CANCELLED" });
-        else terminate({ kind: "ERROR", error });
+        switch (code) {
+          case ErrorCode.INVITE_REVOKED:
+            terminate({ kind: TerminationKind.REVOKED });
+            break;
+          case ErrorCode.JOIN_WINDOW_CLOSED:
+            terminate({ kind: TerminationKind.WINDOW_CLOSED });
+            break;
+          case ErrorCode.CALL_CANCELLED:
+            terminate({
+              kind: TerminationKind.CALL_ENDED,
+              reason: CallEndReason.CANCELLED,
+            });
+            break;
+          default:
+            terminate({ kind: TerminationKind.ERROR, error });
+        }
       },
       [terminate, media],
     ),
@@ -356,7 +369,7 @@ export function CallRoomPage(): React.JSX.Element {
       // the heartbeat would reach the same conclusion a moment later anyway.
       if (payload.callId === callId) {
         media.stop();
-        terminate({ kind: "REVOKED" });
+        terminate({ kind: TerminationKind.REVOKED });
       }
     },
     active,
@@ -367,7 +380,7 @@ export function CallRoomPage(): React.JSX.Element {
     payload => {
       if (payload.callId === callId) {
         media.stop();
-        terminate({ kind: "FORCED_DISCONNECT" });
+        terminate({ kind: TerminationKind.FORCED_DISCONNECT });
       }
     },
     active,
@@ -378,7 +391,7 @@ export function CallRoomPage(): React.JSX.Element {
     payload => {
       if (payload.callId === callId) {
         media.stop();
-        terminate({ kind: "CALL_ENDED", reason: payload.reason });
+        terminate({ kind: TerminationKind.CALL_ENDED, reason: payload.reason });
       }
     },
     active,
@@ -395,7 +408,7 @@ export function CallRoomPage(): React.JSX.Element {
         callId: session.callId,
         sessionId: session.attendanceSession.id,
         deviceId: session.deviceId,
-        reason: "USER_LEFT",
+        reason: LeaveReason.USER_LEFT,
       },
       {
         // Leaving always succeeds from the participant's point of view: even
@@ -405,7 +418,7 @@ export function CallRoomPage(): React.JSX.Element {
             "You left the call",
             "Your attendance has been recorded.",
           );
-          terminate({ kind: "LEFT" });
+          terminate({ kind: TerminationKind.LEFT });
         },
       },
     );
@@ -419,11 +432,11 @@ export function CallRoomPage(): React.JSX.Element {
           "Call ended",
           "Everyone was disconnected and the transcript is queued.",
         );
-        terminate({ kind: "ENDED_BY_ME" });
+        terminate({ kind: TerminationKind.ENDED_BY_ME });
       },
       onError: error => {
         notify.error(error);
-        terminate({ kind: "ERROR", error });
+        terminate({ kind: TerminationKind.ERROR, error });
       },
     });
   }, [endCall, terminate, media]);
@@ -440,11 +453,11 @@ export function CallRoomPage(): React.JSX.Element {
       const body = {
         sessionId: current.attendanceSession.id,
         deviceId: current.deviceId,
-        reason: "TAB_CLOSED" as const,
+        reason: LeaveReason.TAB_CLOSED,
       };
 
       void (
-        current.via === "INVITE_LINK" && current.token
+        current.via === EntryDoor.INVITE_LINK && current.token
           ? joinApi.leave(current.token, body, { keepalive: true })
           : callsApi.leave(current.callId, body, { keepalive: true })
       ).catch(() => undefined);
@@ -475,7 +488,7 @@ export function CallRoomPage(): React.JSX.Element {
           termination={termination}
           callId={callId}
           // A transient failure is worth retrying; a withdrawal is not.
-          canRejoin={termination.kind === "ERROR"}
+          canRejoin={termination.kind === TerminationKind.ERROR}
         />
       );
     }

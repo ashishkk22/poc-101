@@ -19,6 +19,7 @@ import type { Invitation } from "@/lib/api/types";
 import { InvitationStatusBadge } from "./InvitationStatusBadge";
 import { LoadMore } from "@/components/common/LoadMore";
 import { useInfiniteInvitations, useRevokeInvitation } from "./queries";
+import { InvitationStatus } from "@/lib/api/types";
 
 type InvitationTableProps = {
   callId: string;
@@ -103,7 +104,7 @@ export function InvitationTable({ callId }: InvitationTableProps) {
                   {formatDateTime(invitation.lastUsedAt, "Never")}
                 </TableCell>
                 <TableCell className="text-right">
-                  {invitation.status === "ACTIVE" ? (
+                  {invitation.status === InvitationStatus.ACTIVE ? (
                     <Button
                       variant="outline"
                       size="sm"

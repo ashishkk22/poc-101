@@ -6,23 +6,87 @@
  * OpenAPI document later, this file is the one to replace.
  */
 
-export type CallStatus = "DRAFT" | "SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED";
-export type InvitationStatus = "ACTIVE" | "REVOKED" | "EXPIRED";
-export type AttendanceStatus = "NOT_JOINED" | "ACTIVE" | "COMPLETED";
+/**
+ * Enumerations mirroring the backend.
+ *
+ * Written as frozen objects rather than TypeScript `enum`s for one practical
+ * reason: these values arrive from the API as plain JSON strings. A TS `enum`
+ * member is nominally typed, so every value crossing the wire would need a
+ * cast. This pattern keeps the type a string union — `CallStatus.LIVE` is
+ * literally `"LIVE"` — while giving call sites a named constant to compare
+ * against instead of a loose literal. It is also the shape the backend uses.
+ */
+export const CallStatus = {
+  DRAFT: "DRAFT",
+  SCHEDULED: "SCHEDULED",
+  LIVE: "LIVE",
+  ENDED: "ENDED",
+  CANCELLED: "CANCELLED",
+} as const;
+export type CallStatus = (typeof CallStatus)[keyof typeof CallStatus];
+
+export const InvitationStatus = {
+  ACTIVE: "ACTIVE",
+  REVOKED: "REVOKED",
+  EXPIRED: "EXPIRED",
+} as const;
+export type InvitationStatus =
+  (typeof InvitationStatus)[keyof typeof InvitationStatus];
+
+export const AttendanceStatus = {
+  NOT_JOINED: "NOT_JOINED",
+  ACTIVE: "ACTIVE",
+  COMPLETED: "COMPLETED",
+} as const;
+export type AttendanceStatus =
+  (typeof AttendanceStatus)[keyof typeof AttendanceStatus];
+
+export const AttendanceSessionStatus = {
+  CONNECTED: "CONNECTED",
+  LEFT: "LEFT",
+  REVOKED: "REVOKED",
+  WINDOW_CLOSED: "WINDOW_CLOSED",
+  CALL_ENDED: "CALL_ENDED",
+  DISCONNECTED: "DISCONNECTED",
+} as const;
 export type AttendanceSessionStatus =
-  | "CONNECTED"
-  | "LEFT"
-  | "REVOKED"
-  | "WINDOW_CLOSED"
-  | "CALL_ENDED"
-  | "DISCONNECTED";
+  (typeof AttendanceSessionStatus)[keyof typeof AttendanceSessionStatus];
+
+export const TranscriptStatus = {
+  PENDING: "PENDING",
+  PROCESSING: "PROCESSING",
+  READY: "READY",
+  FAILED: "FAILED",
+  DELETED: "DELETED",
+} as const;
 export type TranscriptStatus =
-  | "PENDING"
-  | "PROCESSING"
-  | "READY"
-  | "FAILED"
-  | "DELETED";
-export type AuditOutcome = "SUCCESS" | "DENIED" | "FAILURE";
+  (typeof TranscriptStatus)[keyof typeof TranscriptStatus];
+
+/** Why a call stopped. Shared by the API, the realtime payloads and the UI. */
+export const CallEndReason = {
+  ENDED: "ENDED",
+  CANCELLED: "CANCELLED",
+} as const;
+export type CallEndReason = (typeof CallEndReason)[keyof typeof CallEndReason];
+
+/** Health of the provider's caption stream. */
+export const CaptionStatus = {
+  AVAILABLE: "AVAILABLE",
+  DEGRADED: "DEGRADED",
+} as const;
+export type CaptionStatus = (typeof CaptionStatus)[keyof typeof CaptionStatus];
+
+/** The only status a successful heartbeat reports. */
+export const HeartbeatStatus = { ACTIVE: "ACTIVE" } as const;
+export type HeartbeatStatus =
+  (typeof HeartbeatStatus)[keyof typeof HeartbeatStatus];
+
+export const AuditOutcome = {
+  SUCCESS: "SUCCESS",
+  DENIED: "DENIED",
+  FAILURE: "FAILURE",
+} as const;
+export type AuditOutcome = (typeof AuditOutcome)[keyof typeof AuditOutcome];
 
 export interface User {
   id: string;
@@ -120,7 +184,12 @@ export interface ProviderSession {
   expiresAt: string;
 }
 
-export type CallRole = "ORGANIZER" | "PARTICIPANT" | "NONE";
+export const CallRole = {
+  ORGANIZER: "ORGANIZER",
+  PARTICIPANT: "PARTICIPANT",
+  NONE: "NONE",
+} as const;
+export type CallRole = (typeof CallRole)[keyof typeof CallRole];
 
 export interface JoinResult {
   call: JoinCall;
@@ -166,7 +235,7 @@ export interface MyInvitation {
 }
 
 export interface HeartbeatResult {
-  status: "ACTIVE";
+  status: HeartbeatStatus;
   sessionId: string;
   serverTime: string;
   callEndsAt: string;
@@ -190,7 +259,13 @@ export interface PaginationQuery {
   limit?: number;
 }
 
-export type CallRoleFilter = "organizer" | "participant" | "any";
+export const CallRoleFilter = {
+  ORGANIZER: "organizer",
+  PARTICIPANT: "participant",
+  ANY: "any",
+} as const;
+export type CallRoleFilter =
+  (typeof CallRoleFilter)[keyof typeof CallRoleFilter];
 
 export interface ListCallsQuery extends PaginationQuery {
   status?: CallStatus;
@@ -203,4 +278,9 @@ export interface ListInvitationsQuery extends PaginationQuery {
   status?: InvitationStatus;
 }
 
-export type LeaveReason = "USER_LEFT" | "TAB_CLOSED" | "NETWORK_LOST";
+export const LeaveReason = {
+  USER_LEFT: "USER_LEFT",
+  TAB_CLOSED: "TAB_CLOSED",
+  NETWORK_LOST: "NETWORK_LOST",
+} as const;
+export type LeaveReason = (typeof LeaveReason)[keyof typeof LeaveReason];

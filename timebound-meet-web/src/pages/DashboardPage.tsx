@@ -18,6 +18,7 @@ import {
 import { useCurrentUser } from "@/features/auth";
 import type { Call, ListCallsQuery } from "@/lib/api/types";
 import { parse } from "@/lib/date/format";
+import { CallStatus } from "@/lib/api/types";
 
 /** A 30-day horizon keeps "next up" both bounded and honestly labelled. */
 const UPCOMING_HORIZON_DAYS = 30;
@@ -151,15 +152,15 @@ export function DashboardPage(): React.JSX.Element {
   );
 
   // Small, capped reads purely for the counters above the tabs.
-  const live = useCalls({ role: "any", status: "LIVE", limit: 25 });
+  const live = useCalls({ role: "any", status: CallStatus.LIVE, limit: 25 });
   const upcoming = useCalls({
     role: "any",
-    status: "SCHEDULED",
+    status: CallStatus.SCHEDULED,
     startAfter: upcomingWindow.after,
     startBefore: upcomingWindow.before,
     limit: 25,
   });
-  const ended = useCalls({ role: "any", status: "ENDED", limit: 25 });
+  const ended = useCalls({ role: "any", status: CallStatus.ENDED, limit: 25 });
 
   return (
     <div className="space-y-6">
@@ -216,7 +217,7 @@ export function DashboardPage(): React.JSX.Element {
           <CallSection
             query={{
               role: "any",
-              status: "SCHEDULED",
+              status: CallStatus.SCHEDULED,
               startAfter: upcomingWindow.after,
               startBefore: upcomingWindow.before,
               limit: 25,
@@ -229,7 +230,7 @@ export function DashboardPage(): React.JSX.Element {
 
         <TabsContent value="live">
           <CallSection
-            query={{ role: "any", status: "LIVE", limit: 25 }}
+            query={{ role: "any", status: CallStatus.LIVE, limit: 25 }}
             highlight
             emptyTitle="Nothing happening right now"
             emptyDescription="Meetings show up here while they're running."
@@ -238,7 +239,7 @@ export function DashboardPage(): React.JSX.Element {
 
         <TabsContent value="ended">
           <CallSection
-            query={{ role: "any", status: "ENDED", limit: 25 }}
+            query={{ role: "any", status: CallStatus.ENDED, limit: 25 }}
             emptyTitle="Nothing here yet"
             emptyDescription="Once a meeting wraps up, you'll find it here with its transcript."
           />

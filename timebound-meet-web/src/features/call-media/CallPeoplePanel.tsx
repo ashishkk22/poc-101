@@ -11,6 +11,7 @@ import {
 import type { CallParticipant, Invitation } from "@/lib/api/types";
 import { formatTime } from "@/lib/date/format";
 import { notify } from "@/lib/toast";
+import { InvitationStatus } from "@/lib/api/types";
 
 type CallPeoplePanelProps = {
   callId: string;
@@ -50,13 +51,13 @@ export function CallPeoplePanel({
   // Someone invited who has not arrived, or has stepped out.
   const awaited = invited.filter(
     invitation =>
-      invitation.status === "ACTIVE" && !present.has(invitation.participantId),
+      invitation.status === InvitationStatus.ACTIVE && !present.has(invitation.participantId),
   );
 
   function invitationFor(userId: string): Invitation | undefined {
     return invited.find(
       invitation =>
-        invitation.participantId === userId && invitation.status === "ACTIVE",
+        invitation.participantId === userId && invitation.status === InvitationStatus.ACTIVE,
     );
   }
 

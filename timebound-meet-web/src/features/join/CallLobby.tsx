@@ -15,6 +15,7 @@ import { formatRelative, formatWindow, parse } from "@/lib/date/format";
 import type { JoinCall } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
 import { useVideoStream, type LocalMedia } from "./useLocalMedia";
+import { MediaPermission } from "@/features/join";
 
 function initials(name: string): string {
   return (
@@ -86,7 +87,7 @@ export function CallLobby({
                 {initials(viewerName)}
               </span>
               <p className="text-sm text-white/60">
-                {media.permission === "PROMPTING"
+                {media.permission === MediaPermission.PROMPTING
                   ? "Just checking your camera…"
                   : media.cameraOn
                     ? "We can't see a camera — you can still join"

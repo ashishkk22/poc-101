@@ -11,6 +11,7 @@ import type { Call } from "@/lib/api/types";
 import { InvitationTable } from "./InvitationTable";
 import { InviteParticipantDialog } from "./InviteParticipantDialog";
 import { useInvitations } from "./queries";
+import { CallStatus } from "@/lib/api/types";
 
 type InvitationsPanelProps = {
   call: Call;
@@ -26,7 +27,7 @@ type InvitationsPanelProps = {
 export function InvitationsPanel({ call }: InvitationsPanelProps) {
   const invitations = useInvitations(call.id);
 
-  const closed = call.status === "CANCELLED" || call.status === "ENDED";
+  const closed = call.status === CallStatus.CANCELLED || call.status === CallStatus.ENDED;
   const disabledReason = closed
     ? "You can't invite people once a meeting is over or called off."
     : undefined;

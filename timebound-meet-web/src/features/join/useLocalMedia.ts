@@ -8,12 +8,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
  * provider adapter is connected, and nothing here influences authorization:
  * a denied camera never blocks entry, it only changes what you send.
  */
+/** Where the browser got to when asked for a camera and microphone. */
+export const MediaPermission = {
+  IDLE: "IDLE",
+  PROMPTING: "PROMPTING",
+  GRANTED: "GRANTED",
+  DENIED: "DENIED",
+  UNAVAILABLE: "UNAVAILABLE",
+} as const;
 export type MediaPermission =
-  | "IDLE"
-  | "PROMPTING"
-  | "GRANTED"
-  | "DENIED"
-  | "UNAVAILABLE";
+  (typeof MediaPermission)[keyof typeof MediaPermission];
 
 export interface LocalMedia {
   stream: MediaStream | null;

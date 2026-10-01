@@ -1,3 +1,4 @@
+import type { CallEndReason, CaptionStatus } from "@/lib/api/types";
 /**
  * The Socket.IO event contract, mirrored from the backend.
  *
@@ -27,7 +28,7 @@ export interface InvitationRevokedPayload {
 export interface CallEndedPayload {
   type: typeof RealtimeEvent.CALL_ENDED;
   callId: string;
-  reason: 'ENDED' | 'CANCELLED';
+  reason: CallEndReason;
 }
 
 export interface ForcedDisconnectPayload {
@@ -40,7 +41,7 @@ export interface ForcedDisconnectPayload {
 export interface CaptionStatusChangedPayload {
   type: typeof RealtimeEvent.CAPTION_STATUS_CHANGED;
   callId: string;
-  status: 'AVAILABLE' | 'DEGRADED';
+  status: CaptionStatus;
 }
 
 /** Roster changes: a display name and an arrival time, nothing more. */

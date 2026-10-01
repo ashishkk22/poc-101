@@ -13,6 +13,7 @@ import {
   useJoinCall,
   useLocalMedia,
 } from "@/features/join";
+import { EntryDoor } from "@/features/join";
 
 /**
  * The pre-join step for entry without a link.
@@ -80,7 +81,7 @@ export function CallLobbyPage(): React.JSX.Element {
               {
                 onSuccess: result => {
                   start({
-                    via: "CALL_ID",
+                    via: EntryDoor.CALL_ID,
                     token: null,
                     callId: result.call.id,
                     deviceId: deviceId.current,

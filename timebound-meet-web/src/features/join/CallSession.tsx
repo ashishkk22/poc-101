@@ -7,12 +7,7 @@ import {
   useState,
 } from "react";
 import type { PropsWithChildren } from "react";
-import type {
-  AttendanceSession,
-  CallRole,
-  JoinCall,
-  ProviderSession,
-} from "@/lib/api/types";
+import type { AttendanceSession, CallEndReason, CallRole, JoinCall, ProviderSession } from "@/lib/api/types";
 
 /**
  * The active call session, held in memory only.
@@ -27,7 +22,7 @@ export interface ActiveCallSession {
    * Which door was used. The backend reaches the same decision either way;
    * this only tells the client which endpoints to keep talking to.
    */
-  via: "INVITE_LINK" | "CALL_ID";
+  via: EntryDoor;
   /** Raw invitation credential, present only for link entry. Never persisted. */
   token: string | null;
   callId: string;
@@ -41,14 +36,39 @@ export interface ActiveCallSession {
   cameraOn: boolean;
 }
 
+/**
+ * Which door someone came in by.
+ *
+ * The backend reaches the same decision either way; this only tells the client
+ * which endpoints to keep talking to.
+ */
+export const EntryDoor = {
+  INVITE_LINK: "INVITE_LINK",
+  CALL_ID: "CALL_ID",
+} as const;
+export type EntryDoor = (typeof EntryDoor)[keyof typeof EntryDoor];
+
+/** Why a call session ended. */
+export const TerminationKind = {
+  REVOKED: "REVOKED",
+  CALL_ENDED: "CALL_ENDED",
+  FORCED_DISCONNECT: "FORCED_DISCONNECT",
+  WINDOW_CLOSED: "WINDOW_CLOSED",
+  LEFT: "LEFT",
+  ENDED_BY_ME: "ENDED_BY_ME",
+  ERROR: "ERROR",
+} as const;
+export type TerminationKind =
+  (typeof TerminationKind)[keyof typeof TerminationKind];
+
 export type TerminationReason =
-  | { kind: "REVOKED" }
-  | { kind: "CALL_ENDED"; reason: "ENDED" | "CANCELLED" }
-  | { kind: "FORCED_DISCONNECT" }
-  | { kind: "WINDOW_CLOSED" }
-  | { kind: "LEFT" }
-  | { kind: "ENDED_BY_ME" }
-  | { kind: "ERROR"; error: unknown };
+  | { kind: typeof TerminationKind.REVOKED }
+  | { kind: typeof TerminationKind.CALL_ENDED; reason: CallEndReason }
+  | { kind: typeof TerminationKind.FORCED_DISCONNECT }
+  | { kind: typeof TerminationKind.WINDOW_CLOSED }
+  | { kind: typeof TerminationKind.LEFT }
+  | { kind: typeof TerminationKind.ENDED_BY_ME }
+  | { kind: typeof TerminationKind.ERROR; error: unknown };
 
 interface CallSessionContextValue {
   session: ActiveCallSession | null;

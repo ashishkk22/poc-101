@@ -3,6 +3,7 @@ import { queryKeys } from "@/app/queryClient";
 import { transcriptApi } from "@/lib/api";
 import type { Transcript } from "@/lib/api/types";
 import { ApiError, ErrorCode } from "@/lib/errors";
+import { TranscriptStatus } from "@/lib/api/types";
 
 /**
  * A 409 TRANSCRIPT_NOT_READY is a lifecycle state, not a failure, so it is
@@ -23,7 +24,7 @@ export function useTranscript(callId: string | undefined) {
         ) {
           return {
             callId: callId as string,
-            status: "PROCESSING",
+            status: TranscriptStatus.PROCESSING,
             generatedAt: null,
             expiresAt: null,
           } satisfies Transcript;
@@ -33,7 +34,7 @@ export function useTranscript(callId: string | undefined) {
     },
     refetchInterval: query => {
       const status = query.state.data?.status;
-      return status === "PENDING" || status === "PROCESSING" ? 10_000 : false;
+      return status === TranscriptStatus.PENDING || status === TranscriptStatus.PROCESSING ? 10_000 : false;
     },
   });
 }

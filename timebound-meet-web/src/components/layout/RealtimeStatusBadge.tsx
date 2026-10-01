@@ -1,6 +1,7 @@
 import { Wifi, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { useRealtime } from "@/lib/realtime";
+import { RealtimeStatus } from "@/lib/realtime";
 
 /**
  * Shows connectivity, not authority. A dropped socket never implies the user
@@ -9,7 +10,7 @@ import { useRealtime } from "@/lib/realtime";
 export function RealtimeStatusBadge(): React.JSX.Element | null {
   const { status } = useRealtime();
 
-  if (status === "IDLE" || status === "CONNECTED") {
+  if (status === RealtimeStatus.IDLE || status === RealtimeStatus.CONNECTED) {
     return (
       <Badge
         variant="neutral"
@@ -28,7 +29,7 @@ export function RealtimeStatusBadge(): React.JSX.Element | null {
       title="Live updates unavailable — access is unaffected"
     >
       <WifiOff className="size-3" aria-hidden="true" />
-      {status === "CONNECTING" ? "Connecting" : "Offline"}
+      {status === RealtimeStatus.CONNECTING ? "Connecting" : "Offline"}
     </Badge>
   );
 }

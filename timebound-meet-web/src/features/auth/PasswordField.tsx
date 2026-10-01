@@ -5,14 +5,11 @@ import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
 import { MIN_PASSWORD_LENGTH } from "@/lib/api";
 
-type PasswordFieldProps = ComponentProps<"input"> & {
-  /** The password to evaluate for strength. */
-  value: string;
-};
+type PasswordFieldProps = ComponentProps<"input">;
 
 /** A password input with a reveal toggle that stays keyboard reachable. */
 export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
-  function PasswordField({ className, value, ...props }, ref) {
+  function PasswordField({ className, ...props }, ref) {
     const [visible, setVisible] = useState(false);
 
     return (
@@ -25,7 +22,7 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
         />
         <button
           type="button"
-          onClick={() => setVisible(value => !value)}
+          onClick={() => setVisible(shown => !shown)}
           aria-label={visible ? "Hide password" : "Show password"}
           aria-pressed={visible}
           className="absolute right-1 top-1 inline-flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"

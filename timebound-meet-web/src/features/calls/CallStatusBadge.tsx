@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/Badge";
-import type { CallStatus } from "@/lib/api/types";
+import { CallStatus } from "@/lib/api/types";
 
 type StatusEntry = {
   label: string;
@@ -26,7 +26,7 @@ export function CallStatusBadge({ status }: CallStatusBadgeProps) {
 
   return (
     <Badge variant={entry.variant}>
-      {status === "LIVE" ? (
+      {status === CallStatus.LIVE ? (
         <span className="size-1.5 rounded-full bg-success" aria-hidden="true" />
       ) : null}
       {entry.label}

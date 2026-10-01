@@ -12,6 +12,10 @@ import { TZDate } from "@date-fns/tz";
  */
 
 /** The viewer's own zone, which is what times are displayed in by default. */
+/** What `Intl` emits for UTC when there is no offset to show. */
+const INTL_BARE_GMT = "GMT";
+const UTC_OFFSET_ZERO = "UTC+00:00";
+
 export function localTimeZone(): string {
   try {
     return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
@@ -70,9 +74,9 @@ export function zoneOffsetLabel(
       .formatToParts(at)
       .find(part => part.type === "timeZoneName")?.value;
 
-    // Intl renders UTC itself as "GMT" with no offset.
-    if (!formatted || formatted === "GMT") return "UTC+00:00";
-    return formatted.replace("GMT", "UTC");
+    // Intl renders UTC itself as bare "GMT", with no offset to parse.
+    if (!formatted || formatted === INTL_BARE_GMT) return UTC_OFFSET_ZERO;
+    return formatted.replace(INTL_BARE_GMT, "UTC");
   } catch {
     return "UTC";
   }

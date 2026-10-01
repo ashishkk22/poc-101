@@ -7,6 +7,7 @@ import type {
   LeaveResult,
   ResolvedLink,
 } from '@/lib/api/types';
+import { EntryDoor } from "./CallSession";
 
 /**
  * Entry is always a request, never a local decision.
@@ -46,7 +47,7 @@ export function useJoinCall() {
 }
 
 export interface LeaveInput {
-  via: 'INVITE_LINK' | 'CALL_ID';
+  via: EntryDoor;
   token: string | null;
   callId: string;
   sessionId?: string;
@@ -57,7 +58,7 @@ export interface LeaveInput {
 export function useLeaveCall() {
   return useMutation<LeaveResult, unknown, LeaveInput>({
     mutationFn: ({ via, token, callId, ...rest }) =>
-      via === 'INVITE_LINK' && token
+      via === EntryDoor.INVITE_LINK && token
         ? joinApi.leave(token, rest)
         : callsApi.leave(callId, rest),
   });

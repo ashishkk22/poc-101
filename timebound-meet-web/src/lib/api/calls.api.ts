@@ -1,14 +1,6 @@
 import { apiClient } from "./client";
-import type {
-  Call,
-  CallParticipant,
-  HeartbeatResult,
-  JoinResult,
-  LeaveReason,
-  LeaveResult,
-  ListCallsQuery,
-  PaginatedResponse,
-} from "./types";
+import type { Call, CallParticipant, HeartbeatResult, JoinResult, LeaveResult, ListCallsQuery, PaginatedResponse } from "./types";
+import { LeaveReason } from "./types";
 
 export interface CreateCallInput {
   title: string;
@@ -53,7 +45,7 @@ export const callsApi = {
   ) =>
     apiClient.post<LeaveResult>(
       `/calls/${callId}/leave`,
-      { reason: "USER_LEFT", ...input },
+      { reason: LeaveReason.USER_LEFT, ...input },
       options.keepalive ? { keepalive: true } : {},
     ),
 

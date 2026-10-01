@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { callsApi, joinApi } from "@/lib/api";
 import { ApiError, ErrorCode } from "@/lib/errors";
 import { config } from "@/lib/config/env";
+import { EntryDoor } from "./CallSession";
 
 /**
  * The heartbeat is not a keep-alive; it is a recurring authorization check.
@@ -33,7 +34,7 @@ export interface HeartbeatState {
 }
 
 type HeartbeatOptions = {
-  via: "INVITE_LINK" | "CALL_ID";
+  via: EntryDoor;
   token: string | null;
   callId: string | null;
   sessionId: string | null;
@@ -71,7 +72,7 @@ export function useHeartbeat(options: HeartbeatOptions): HeartbeatState {
         // Whichever door was used stays the door: the link path keeps
         // presenting the link, so revoking it is felt immediately.
         const result =
-          via === "INVITE_LINK" && token
+          via === EntryDoor.INVITE_LINK && token
             ? await joinApi.heartbeat(token, body)
             : await callsApi.heartbeat(callId as string, body);
 

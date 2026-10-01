@@ -40,6 +40,7 @@ import { TranscriptView } from "@/features/transcript";
 import { RealtimeEvent, useCallRoom, useRealtimeEvent } from "@/lib/realtime";
 import { formatWindow } from "@/lib/date/format";
 import { notify } from "@/lib/toast";
+import { CallStatus } from "@/lib/api/types";
 
 /**
  * The organizer's control surface for one call.
@@ -71,8 +72,8 @@ export function CallDetailsPage(): React.JSX.Element {
     );
 
   const data = call.data;
-  const isLive = data.status === "LIVE";
-  const isActionable = data.status === "SCHEDULED" || isLive;
+  const isLive = data.status === CallStatus.LIVE;
+  const isActionable = data.status === CallStatus.SCHEDULED || isLive;
   const mutating = cancelCall.isPending || endCall.isPending;
 
   return (

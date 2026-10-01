@@ -1,6 +1,7 @@
 import { Loader2, MicOff, VideoOff, WifiOff } from "lucide-react";
 import { useVideoStream } from "@/features/join";
 import { cn } from "@/lib/utils";
+import { PeerState } from "@/features/call-media";
 
 function initials(name: string): string {
   return (
@@ -91,12 +92,12 @@ export function VideoTile({
               <VideoOff className="size-3" aria-hidden="true" />
               Camera off
             </span>
-          ) : state === "FAILED" ? (
+          ) : state === PeerState.FAILED ? (
             <span className="inline-flex items-center gap-1.5 text-xs text-destructive">
               <WifiOff className="size-3" aria-hidden="true" />
               Could not connect
             </span>
-          ) : state === "CONNECTED" ? (
+          ) : state === PeerState.CONNECTED ? (
             <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
               <VideoOff className="size-3" aria-hidden="true" />
               Camera off
@@ -104,7 +105,7 @@ export function VideoTile({
           ) : (
             <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
               <Loader2 className="size-3 animate-spin" aria-hidden="true" />
-              {state === "RECONNECTING" ? "Reconnecting…" : "Connecting…"}
+              {state === PeerState.RECONNECTING ? "Reconnecting…" : "Connecting…"}
             </span>
           )}
         </div>

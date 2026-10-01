@@ -14,6 +14,7 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useCurrentUser } from "@/features/auth";
 import {
   CallLobby,
+  EntryDoor,
   newDeviceId,
   useAuthorizeJoin,
   useCallSession,
@@ -80,7 +81,7 @@ export function JoinPage(): React.JSX.Element {
                 {
                   onSuccess: result => {
                     start({
-                      via: "INVITE_LINK",
+                      via: EntryDoor.INVITE_LINK,
                       token,
                       callId: result.call.id,
                       deviceId: deviceId.current,

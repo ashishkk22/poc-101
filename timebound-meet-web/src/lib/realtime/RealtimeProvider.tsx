@@ -21,11 +21,15 @@ import {
 
 type Listener<E extends RealtimeEvent> = (payload: RealtimeEventMap[E]) => void;
 
+/** Connectivity of the realtime channel. Never an authorization signal. */
+export const RealtimeStatus = {
+  IDLE: "IDLE",
+  CONNECTING: "CONNECTING",
+  CONNECTED: "CONNECTED",
+  DISCONNECTED: "DISCONNECTED",
+} as const;
 export type RealtimeStatus =
-  | "IDLE"
-  | "CONNECTING"
-  | "CONNECTED"
-  | "DISCONNECTED";
+  (typeof RealtimeStatus)[keyof typeof RealtimeStatus];
 
 interface RealtimeContextValue {
   status: RealtimeStatus;
@@ -171,7 +175,7 @@ export function useCallRoom(callId: string | null | undefined): {
   }>({ joined: false, peers: null });
 
   useEffect(() => {
-    if (!callId || status !== "CONNECTED") {
+    if (!callId || status !== RealtimeStatus.CONNECTED) {
       setState({ joined: false, peers: null });
       return;
     }

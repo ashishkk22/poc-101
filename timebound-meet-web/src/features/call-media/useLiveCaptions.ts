@@ -28,7 +28,13 @@ export interface CaptionLine {
   at: string;
 }
 
-export type CaptionSupport = "SUPPORTED" | "UNSUPPORTED";
+/** Whether this browser can transcribe speech at all. */
+export const CaptionSupport = {
+  SUPPORTED: "SUPPORTED",
+  UNSUPPORTED: "UNSUPPORTED",
+} as const;
+export type CaptionSupport =
+  (typeof CaptionSupport)[keyof typeof CaptionSupport];
 
 export interface LiveCaptionsState {
   lines: CaptionLine[];

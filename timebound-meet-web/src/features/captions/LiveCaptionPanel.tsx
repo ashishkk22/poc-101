@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/Button";
 import type { LiveCaptionsState } from "@/features/call-media";
 import { formatTime } from "@/lib/date/format";
 import { cn } from "@/lib/utils";
+import { CaptionSupport } from "@/features/call-media";
 
 type LiveCaptionPanelProps = {
   captions: LiveCaptionsState;
@@ -42,7 +43,7 @@ export function LiveCaptionPanel({
           Captions
         </h3>
 
-        {captions.support === "UNSUPPORTED" ? (
+        {captions.support === CaptionSupport.UNSUPPORTED ? (
           <Badge variant="neutral">unavailable</Badge>
         ) : (
           <Button
@@ -62,7 +63,7 @@ export function LiveCaptionPanel({
       >
         {captions.lines.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            {captions.support === "UNSUPPORTED"
+            {captions.support === CaptionSupport.UNSUPPORTED
               ? "This browser can't do captions. Chrome or Edge will."
               : captions.publishing
                 ? "Listening — say something!"
