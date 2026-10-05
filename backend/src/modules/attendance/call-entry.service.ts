@@ -2,7 +2,7 @@ import { DEFAULT_DEVICE_ID } from '../../config/constants.js';
 import { prisma, type DbClient } from '../../infrastructure/database/prisma.js';
 import { logger } from '../../infrastructure/logger/logger.js';
 import { enqueueProviderCleanup } from '../../infrastructure/queue/queues.js';
-import { recordProviderTiming } from '../../infrastructure/telemetry/otel.js';
+import { recordProviderTiming } from '../../infrastructure/logger/timing.js';
 import { AppError, ErrorCode } from '../../shared/errors/index.js';
 import { type RequestContext } from '../../shared/http/request-context.js';
 import { type Clock, systemClock } from '../../shared/time/clock.js';

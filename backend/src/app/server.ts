@@ -4,8 +4,6 @@ import { disconnectDatabase } from '../infrastructure/database/prisma.js';
 import { logger } from '../infrastructure/logger/logger.js';
 import { closeQueues } from '../infrastructure/queue/queues.js';
 import { disconnectRedis } from '../infrastructure/redis/redis.js';
-import { initSentry } from '../infrastructure/telemetry/sentry.js';
-import { initTelemetry, shutdownTelemetry } from '../infrastructure/telemetry/otel.js';
 import {
   closeRealtimeGateway,
   createRealtimeGateway,
@@ -14,9 +12,6 @@ import { startWorkers, stopWorkers } from '../workers/worker.js';
 import { createApp } from './app.js';
 
 async function main(): Promise<void> {
-  await initTelemetry();
-  initSentry();
-
   const app = createApp();
   const httpServer = createServer(app);
 
@@ -59,7 +54,6 @@ async function main(): Promise<void> {
       await closeQueues();
       await disconnectRedis();
       await disconnectDatabase();
-      await shutdownTelemetry();
       logger.info('shutdown complete');
       clearTimeout(forceExit);
       process.exit(0);

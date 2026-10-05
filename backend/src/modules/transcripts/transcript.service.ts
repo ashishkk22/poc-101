@@ -1,7 +1,7 @@
 import { env } from '../../config/env.js';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { logger } from '../../infrastructure/logger/logger.js';
-import { recordProviderTiming } from '../../infrastructure/telemetry/otel.js';
+import { recordProviderTiming } from '../../infrastructure/logger/timing.js';
 import { AppError, ErrorCode } from '../../shared/errors/index.js';
 import { type RequestContext } from '../../shared/http/request-context.js';
 import { type Clock, systemClock } from '../../shared/time/clock.js';

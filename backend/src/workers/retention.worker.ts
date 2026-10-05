@@ -2,7 +2,7 @@ import { Worker, type Job } from 'bullmq';
 import { QUEUE_NAMES } from '../config/constants.js';
 import { logger } from '../infrastructure/logger/logger.js';
 import { createQueueConnection } from '../infrastructure/redis/redis.js';
-import { recordJobTiming } from '../infrastructure/telemetry/otel.js';
+import { recordJobTiming } from '../infrastructure/logger/timing.js';
 import { type RetentionJobData } from '../infrastructure/queue/queues.js';
 import { retentionService } from '../modules/retention/retention.service.js';
 

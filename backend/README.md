@@ -181,8 +181,6 @@ none. See `.env.example` for the complete annotated list.
 | `TRANSCRIPT_RETENTION_DAYS`        | Retention window (default 30)                               |
 | `HEARTBEAT_TIMEOUT_SECONDS`        | Liveness threshold before a session is reaped               |
 | `RATE_LIMIT_*`                     | Per-bucket limits, all configurable                         |
-| `SENTRY_DSN`                       | Optional; empty disables                                    |
-| `OTEL_EXPORTER_OTLP_ENDPOINT`      | Optional; empty disables tracing                            |
 
 Secrets are never hard-coded and never logged.
 
@@ -571,8 +569,6 @@ provider API keys · transcript content.
   header cannot inject newlines into logs
 - Append-only audit trail (`AuditEvent`)
 - Provider call and queue job timings
-- OpenTelemetry (opt-in via `OTEL_EXPORTER_OTLP_ENDPOINT`)
-- Sentry integration point (`src/infrastructure/telemetry/sentry.ts`)
 
 ---
 
@@ -702,7 +698,7 @@ src/
     provider/      adapter interfaces + mocks + failure injection
     realtime/      Socket.IO gateway, Redis pub/sub
     retention/     idempotent transcript deletion
-  infrastructure/  prisma, redis, queues, logger, telemetry
+  infrastructure/  prisma, redis, queues, logger
   shared/          errors, http, security, time, validation, types
   workers/         worker process and its four queue handlers
 prisma/            schema, migrations, seed

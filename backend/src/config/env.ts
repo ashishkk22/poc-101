@@ -61,10 +61,6 @@ const envSchema = z
     RATE_LIMIT_AUTH_POINTS: positiveInt(20),
     RATE_LIMIT_AUTH_DURATION_SECONDS: positiveInt(60),
 
-    SENTRY_DSN: z.string().optional(),
-    OTEL_EXPORTER_OTLP_ENDPOINT: z.string().optional(),
-    OTEL_SERVICE_NAME: z.string().default('timebound-meet-backend'),
-
     RUN_WORKERS_IN_API_PROCESS: booleanish.default(false),
   })
   .superRefine((value, ctx) => {

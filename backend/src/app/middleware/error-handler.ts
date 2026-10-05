@@ -1,7 +1,6 @@
 import { type NextFunction, type Request, type Response } from 'express';
 import { ZodError } from 'zod';
 import { logger } from '../../infrastructure/logger/logger.js';
-import { captureException } from '../../infrastructure/telemetry/sentry.js';
 import { AppError, ErrorCode, ERROR_MESSAGES, ERROR_STATUS } from '../../shared/errors/index.js';
 import { ProviderError } from '../../modules/provider/provider.types.js';
 
@@ -71,7 +70,6 @@ export function errorHandler(
 
   if (status >= 500) {
     logger.error(logPayload, 'request failed');
-    captureException(appError.cause ?? appError, { requestId: req.requestId, code: appError.code });
   } else {
     logger.warn(logPayload, 'request rejected');
   }

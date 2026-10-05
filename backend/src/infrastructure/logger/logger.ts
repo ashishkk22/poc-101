@@ -37,7 +37,7 @@ const REDACTED_PATHS = [
 export const logger: Logger = pino({
   level: env.LOG_LEVEL,
   base: {
-    service: env.OTEL_SERVICE_NAME,
+    service: 'timebound-meet-backend',
     env: env.NODE_ENV,
   },
   redact: {

@@ -2,7 +2,7 @@
   "name": "timebound-meet-backend",
   "version": "1.0.0",
   "private": true,
-  "description": "Sync \u2014 scheduled-meeting backend. Everyone, at the same moment.",
+  "description": "Sync — scheduled-meeting backend. Everyone, at the same moment.",
   "type": "module",
   "engines": {
     "node": ">=22"
@@ -37,10 +37,6 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@opentelemetry/api": "^1.9.1",
-    "@opentelemetry/auto-instrumentations-node": "^0.80.0",
-    "@opentelemetry/exporter-trace-otlp-http": "^0.222.0",
-    "@opentelemetry/sdk-node": "^0.222.0",
     "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "@socket.io/redis-adapter": "^8.3.0",

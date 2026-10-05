@@ -3,8 +3,6 @@ import { disconnectDatabase } from '../infrastructure/database/prisma.js';
 import { logger } from '../infrastructure/logger/logger.js';
 import { closeQueues, registerRepeatableJobs } from '../infrastructure/queue/queues.js';
 import { disconnectRedis } from '../infrastructure/redis/redis.js';
-import { initSentry } from '../infrastructure/telemetry/sentry.js';
-import { initTelemetry, shutdownTelemetry } from '../infrastructure/telemetry/otel.js';
 import { createCallLifecycleWorker } from './call-lifecycle.worker.js';
 import { createProviderCleanupWorker } from './provider-cleanup.worker.js';
 import { createRetentionWorker } from './retention.worker.js';
@@ -40,8 +38,6 @@ export async function stopWorkers(): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  await initTelemetry();
-  initSentry();
   await startWorkers();
 
   let shuttingDown = false;
@@ -59,7 +55,6 @@ async function main(): Promise<void> {
       await closeQueues();
       await disconnectRedis();
       await disconnectDatabase();
-      await shutdownTelemetry();
       logger.info('worker shutdown complete');
       process.exit(0);
     } catch (error) {

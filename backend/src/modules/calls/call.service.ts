@@ -2,7 +2,7 @@ import { type CallStatus } from '../../generated/prisma/enums.js';
 import { prisma } from '../../infrastructure/database/prisma.js';
 import { logger } from '../../infrastructure/logger/logger.js';
 import { enqueueProviderCleanup, enqueueTranscript } from '../../infrastructure/queue/queues.js';
-import { recordProviderTiming } from '../../infrastructure/telemetry/otel.js';
+import { recordProviderTiming } from '../../infrastructure/logger/timing.js';
 import { AppError, ErrorCode } from '../../shared/errors/index.js';
 import { buildPage } from '../../shared/http/pagination.js';
 import { type RequestContext } from '../../shared/http/request-context.js';
