@@ -103,6 +103,8 @@ export interface Call {
   status: CallStatus;
   organizerId: string;
   createdAt: string;
+  /** When the meeting actually ended, which can be before scheduledEnd. */
+  endedAt?: string | null;
 }
 
 /** The reduced view a participant receives from the join endpoint. */

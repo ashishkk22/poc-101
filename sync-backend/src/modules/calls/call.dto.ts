@@ -15,6 +15,8 @@ export interface CallDto {
   status: CallStatus;
   organizerId: string;
   createdAt: string;
+  // When the meeting actually ended, which can be before scheduledEnd.
+  endedAt: string | null;
 }
 
 export interface CallSummaryDto extends CallDto {
@@ -30,6 +32,7 @@ interface CallRecord {
   status: CallStatus;
   organizerId: string;
   createdAt: Date;
+  endedAt?: Date | null;
 }
 
 export function toCallDto(call: CallRecord): CallDto {
@@ -42,6 +45,7 @@ export function toCallDto(call: CallRecord): CallDto {
     status: call.status,
     organizerId: call.organizerId,
     createdAt: call.createdAt.toISOString(),
+    endedAt: call.endedAt ? call.endedAt.toISOString() : null,
   };
 }
 

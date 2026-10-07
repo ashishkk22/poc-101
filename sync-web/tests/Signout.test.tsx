@@ -1,10 +1,15 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { renderHook, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useSignOut } from "@/features/auth";
 import { createQueryClient } from "@/app/queryClient";
+import { AppShell } from "@/components/layout/AppShell";
+import { ProtectedRoute } from "@/components/layout/ProtectedRoute";
 import { ApiError } from "@/lib/errors";
+import { createTestQueryClient, renderWithProviders } from "./testUtils";
 
 const signOut = vi.fn();
 
@@ -19,10 +24,49 @@ vi.mock("@/lib/api", async () => {
 function wrapper(client: ReturnType<typeof createQueryClient>) {
   return function Wrapper({ children }: { children: ReactNode }) {
     return (
-      <QueryClientProvider client={client}>{children}</QueryClientProvider>
+      <QueryClientProvider client={client}>
+        <MemoryRouter>{children}</MemoryRouter>
+      </QueryClientProvider>
     );
   };
 }
+
+describe("Sign out from the app", () => {
+  beforeEach(() => {
+    signOut.mockReset();
+  });
+
+  it("lands on the home page, not the page it was on", async () => {
+    signOut.mockResolvedValue(undefined);
+    const queryClient = createTestQueryClient();
+    queryClient.setQueryData(["session"], {
+      id: "u1",
+      name: "Olivia",
+      email: "o@example.com",
+    });
+
+    renderWithProviders(
+      <Routes>
+        <Route path="/" element={<h1>Home</h1>} />
+        <Route path="/login" element={<h1>Login</h1>} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<AppShell />}>
+            <Route path="/dashboard" element={<h1>Dashboard</h1>} />
+          </Route>
+        </Route>
+      </Routes>,
+      { route: "/dashboard", queryClient },
+    );
+
+    expect(screen.getByRole("heading", { name: "Dashboard" })).toBeVisible();
+    await userEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+    expect(
+      await screen.findByRole("heading", { name: "Home" }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Dashboard" })).toBeNull();
+  });
+});
 
 describe("Signing out", () => {
   beforeEach(() => {

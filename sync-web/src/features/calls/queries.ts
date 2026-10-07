@@ -50,6 +50,10 @@ export function useCall(callId: string | undefined) {
     queryKey: queryKeys.call(callId ?? ""),
     queryFn: ({ signal }) => callsApi.getById(callId as string, signal),
     enabled: Boolean(callId),
+    // A live meeting ends on the server; re-read so the page notices without
+    // a reload (and the transcript section starts waiting for its write-up).
+    refetchInterval: query =>
+      query.state.data?.status === "LIVE" ? 30_000 : false,
   });
 }
 

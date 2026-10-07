@@ -1,4 +1,6 @@
 import {
+  Ban,
+  CalendarClock,
   CheckCircle2,
   Clock,
   FileText,
@@ -10,8 +12,27 @@ import { Badge } from "@/components/ui/Badge";
 import { ErrorState } from "@/components/common/ErrorState";
 import { LoadingState } from "@/components/common/LoadingState";
 import { formatDateTime } from "@/lib/date/format";
-import type { Transcript, TranscriptStatus } from "@/lib/api/types";
+import {
+  CallStatus,
+  type Call,
+  type Transcript,
+  type TranscriptStatus,
+} from "@/lib/api/types";
 import { useTranscript } from "./queries";
+
+/**
+ * A transcript is normally ready a minute or two after the meeting ends.
+ * Past this, "a minute or two" would be untrue, so the page says it's late.
+ */
+const OVERDUE_AFTER_MS = 10 * 60_000;
+
+type TranscriptCall = Pick<Call, "status" | "scheduledEnd" | "endedAt">;
+
+function isOverdue(call: TranscriptCall | undefined, now: number): boolean {
+  if (!call) return false;
+  const endedAt = Date.parse(call.endedAt ?? call.scheduledEnd);
+  return Number.isFinite(endedAt) && now - endedAt > OVERDUE_AFTER_MS;
+}
 
 const STATUS: Record<
   TranscriptStatus,
@@ -41,12 +62,28 @@ export function TranscriptStatusBadge({ status }: TranscriptStatusBadgeProps) {
 
 type TranscriptBodyProps = {
   transcript: Transcript;
+  overdue: boolean;
 };
 
-function TranscriptBody({ transcript }: TranscriptBodyProps) {
+function TranscriptBody({ transcript, overdue }: TranscriptBodyProps) {
   switch (transcript.status) {
     case "PENDING":
     case "PROCESSING":
+      if (overdue) {
+        return (
+          <Alert variant="warning">
+            <Clock aria-hidden="true" />
+            <div>
+              <AlertTitle>This is taking longer than it should</AlertTitle>
+              <AlertDescription>
+                Transcripts are usually ready a minute or two after the meeting
+                ends. We'll keep checking, but if it stays like this, the
+                transcript service may not be running.
+              </AlertDescription>
+            </div>
+          </Alert>
+        );
+      }
       return (
         <Alert variant="info">
           <Clock aria-hidden="true" />
@@ -126,10 +163,49 @@ function TranscriptBody({ transcript }: TranscriptBodyProps) {
 
 type TranscriptViewProps = {
   callId: string;
+  /** When known, lets the view tell "not yet" and "late" apart from "soon". */
+  call?: TranscriptCall;
 };
 
-export function TranscriptView({ callId }: TranscriptViewProps) {
-  const transcript = useTranscript(callId);
+export function TranscriptView({ callId, call }: TranscriptViewProps) {
+  // Only an ended meeting is written up; asking before then would just poll.
+  const awaitingEnd =
+    call !== undefined &&
+    call.status !== CallStatus.ENDED &&
+    call.status !== CallStatus.CANCELLED;
+  const cancelled = call?.status === CallStatus.CANCELLED;
+  const transcript = useTranscript(callId, {
+    enabled: !awaitingEnd && !cancelled,
+  });
+
+  if (awaitingEnd) {
+    return (
+      <Alert variant="info">
+        <CalendarClock aria-hidden="true" />
+        <div>
+          <AlertTitle>Written up after the meeting</AlertTitle>
+          <AlertDescription>
+            The transcript is put together once the meeting ends. Check back
+            then.
+          </AlertDescription>
+        </div>
+      </Alert>
+    );
+  }
+
+  if (cancelled) {
+    return (
+      <Alert>
+        <Ban aria-hidden="true" />
+        <div>
+          <AlertTitle>No transcript</AlertTitle>
+          <AlertDescription>
+            This meeting was cancelled, so there's nothing to write up.
+          </AlertDescription>
+        </div>
+      </Alert>
+    );
+  }
 
   if (transcript.isPending)
     return <LoadingState label="Loading transcript…" rows={2} />;
@@ -148,7 +224,11 @@ export function TranscriptView({ callId }: TranscriptViewProps) {
         <span className="text-sm text-muted-foreground">Status</span>
         <TranscriptStatusBadge status={transcript.data.status} />
       </div>
-      <TranscriptBody transcript={transcript.data} />
+      <TranscriptBody
+        transcript={transcript.data}
+        // Measured at the last check, so it stays current while polling.
+        overdue={isOverdue(call, transcript.dataUpdatedAt)}
+      />
     </div>
   );
 }

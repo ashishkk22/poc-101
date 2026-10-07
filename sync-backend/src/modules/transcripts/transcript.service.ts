@@ -57,10 +57,10 @@ export const transcriptService = {
     if (!transcript || transcript.status === 'PENDING' || transcript.status === 'PROCESSING') {
       throw new AppError(ErrorCode.TRANSCRIPT_NOT_READY);
     }
+    // FAILED is terminal, not "not ready": answered as a status so the client
+    // can stop waiting and say so. There is no content to withhold or audit.
     if (transcript.status === 'FAILED') {
-      throw new AppError(ErrorCode.TRANSCRIPT_NOT_READY, {
-        message: 'Transcript generation did not succeed for this call.',
-      });
+      return toTranscriptDto(transcript, false);
     }
     if (transcript.status === 'DELETED') {
       throw new AppError(ErrorCode.RESOURCE_NOT_FOUND, {

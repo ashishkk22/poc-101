@@ -10,10 +10,13 @@ import { TranscriptStatus } from "@/lib/api/types";
  * folded into the data as PENDING and the query keeps polling until the
  * backend reports a terminal state.
  */
-export function useTranscript(callId: string | undefined) {
+export function useTranscript(
+  callId: string | undefined,
+  { enabled = true }: { enabled?: boolean } = {},
+) {
   return useQuery<Transcript>({
     queryKey: queryKeys.transcript(callId ?? ""),
-    enabled: Boolean(callId),
+    enabled: enabled && Boolean(callId),
     queryFn: async ({ signal }) => {
       try {
         return await transcriptApi.getForCall(callId as string, signal);

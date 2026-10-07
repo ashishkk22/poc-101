@@ -44,7 +44,7 @@ export function TranscriptPage(): React.JSX.Element {
 
       <Card>
         <CardContent className="pt-5">
-          <TranscriptView callId={callId} />
+          <TranscriptView callId={callId} call={call.data} />
         </CardContent>
       </Card>
     </div>

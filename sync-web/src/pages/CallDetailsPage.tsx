@@ -189,7 +189,7 @@ export function CallDetailsPage(): React.JSX.Element {
                 </Button>
               </CardHeader>
               <CardContent>
-                <TranscriptView callId={callId} />
+                <TranscriptView callId={callId} call={call.data} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -260,7 +260,7 @@ export function CallDetailsPage(): React.JSX.Element {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <TranscriptView callId={callId} />
+              <TranscriptView callId={callId} call={call.data} />
             </CardContent>
           </Card>
         </div>

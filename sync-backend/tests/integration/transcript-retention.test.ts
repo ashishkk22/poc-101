@@ -108,6 +108,17 @@ describe('transcript access', () => {
     expect(response.body.error.code).toBe('TRANSCRIPT_NOT_READY');
   });
 
+  it('reports a failed transcript as FAILED, not as still pending', async () => {
+    const { organizer, call } = await createJoinableScenario();
+    setFailureMode(ProviderFailureMode.TRANSCRIPT_FAILURE);
+    await expect(transcriptService.generate(call.id, { requestId: 'test' }, 1)).rejects.toThrow();
+
+    const response = await asUser(organizer.cookie).get(`/api/v1/calls/${call.id}/transcript`);
+    expect(response.status).toBe(200);
+    expect(response.body.data).toMatchObject({ callId: call.id, status: 'FAILED' });
+    expect(response.body.data.content).toBeUndefined();
+  });
+
   it('returns 404 once the transcript has been deleted by retention', async () => {
     const { organizer, call } = await createJoinableScenario();
     await transcriptService.generate(call.id, { requestId: 'test' }, 1);

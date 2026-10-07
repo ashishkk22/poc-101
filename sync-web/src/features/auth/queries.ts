@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { authApi, type SignInInput, type SignUpInput } from "@/lib/api";
 import type { User } from "@/lib/api/types";
 import { ApiError, ErrorCode } from "@/lib/errors";
@@ -80,14 +81,22 @@ export function useSignUp() {
  */
 export function useSignOut() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   return useMutation({
     mutationFn: () => authApi.signOut(),
     onSuccess: () => {
-      // Every cached server response belonged to the session that just ended.
       disconnectSocket();
-      queryClient.clear();
+      // A chosen sign-out goes home. Left to the route guard, the user would
+      // instead land on /login told their session had expired.
+      navigate("/", { replace: true });
+      // Null the session in place rather than clear() it: clear() discards
+      // the query the mounted guard is watching, so it never sees the change.
       queryClient.setQueryData(sessionQueryKey, null);
+      // Every other cached server response belonged to the session that just ended.
+      queryClient.removeQueries({
+        predicate: (query) => query.queryKey[0] !== sessionQueryKey[0],
+      });
     },
   });
 }
