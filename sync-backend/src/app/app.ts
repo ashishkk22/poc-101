@@ -3,7 +3,7 @@ import cors from 'cors';
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { AUTH_BASE_PATH } from '../config/constants.js';
-import { allowedOrigins, isProduction } from '../config/env.js';
+import { allowedOrigins, env, isProduction } from '../config/env.js';
 import { auth } from '../modules/auth/auth.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFoundHandler } from './middleware/not-found.js';
@@ -12,6 +12,7 @@ import { requestIdMiddleware } from './middleware/request-id.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { healthRouter } from './health.routes.js';
 import { apiRouter } from './routes.js';
+import { createWebRouter } from './web.routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -66,6 +67,10 @@ export function createApp(): Express {
   app.use(requestLogger);
 
   app.use(healthRouter);
+
+  // Ahead of the rate limiter: page loads and static assets must not spend
+  // the API budget.
+  if (env.WEB_DIST_DIR) app.use(createWebRouter(env.WEB_DIST_DIR));
 
   // Better Auth mounts before the JSON body parser: it consumes the raw body
   // itself. Express 5 requires the named splat form for a catch-all.

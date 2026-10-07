@@ -1,5 +1,9 @@
 # syntax=docker/dockerfile:1
 
+# One image for the whole app: the API serves the built SPA, so the frontend
+# and the API share a single origin. Build from the repository root:
+#   docker build --target production -t sync .
+
 # ---------------------------------------------------------------------------
 # base — pinned runtime, pnpm via corepack
 # ---------------------------------------------------------------------------
@@ -15,10 +19,22 @@ RUN corepack enable
 WORKDIR /app
 
 # ---------------------------------------------------------------------------
+# web — build the SPA. VITE_API_BASE_URL is deliberately unset: the bundle
+# then talks to whatever origin served it, which is this API.
+# ---------------------------------------------------------------------------
+FROM base AS web
+WORKDIR /web
+COPY sync-web/package.json sync-web/pnpm-lock.yaml ./
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --frozen-lockfile
+COPY sync-web/ ./
+RUN pnpm build
+
+# ---------------------------------------------------------------------------
 # dependencies — full install, cached on the lockfile
 # ---------------------------------------------------------------------------
 FROM base AS dependencies
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY sync-backend/package.json sync-backend/pnpm-lock.yaml sync-backend/pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 
@@ -26,11 +42,11 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 # build — generate the Prisma client and compile TypeScript
 # ---------------------------------------------------------------------------
 FROM base AS build
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY sync-backend/package.json sync-backend/pnpm-lock.yaml sync-backend/pnpm-workspace.yaml ./
 COPY --from=dependencies /app/node_modules ./node_modules
-COPY prisma.config.ts tsconfig.json tsconfig.build.json ./
-COPY prisma ./prisma
-COPY src ./src
+COPY sync-backend/prisma.config.ts sync-backend/tsconfig.json sync-backend/tsconfig.build.json ./
+COPY sync-backend/prisma ./prisma
+COPY sync-backend/src ./src
 RUN pnpm exec prisma generate && pnpm exec tsc -p tsconfig.build.json
 
 # ---------------------------------------------------------------------------
@@ -38,8 +54,9 @@ RUN pnpm exec prisma generate && pnpm exec tsc -p tsconfig.build.json
 # ---------------------------------------------------------------------------
 FROM base AS production
 ENV NODE_ENV=production
+ENV WEB_DIST_DIR=/app/public
 
-COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
+COPY sync-backend/docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh && mkdir -p /app && chown node:node /app
 
 # node:alpine ships an unprivileged `node` user; the image never runs as root.
@@ -49,16 +66,17 @@ RUN chmod +x /usr/local/bin/entrypoint.sh && mkdir -p /app && chown node:node /a
 USER node
 WORKDIR /app
 
-COPY --chown=node:node package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY --chown=node:node sync-backend/package.json sync-backend/pnpm-lock.yaml sync-backend/pnpm-workspace.yaml ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store,uid=1000,gid=1000 \
     pnpm install --frozen-lockfile --prod
 
 # Prisma CLI and config are kept so the container can run `migrate deploy`.
-COPY --chown=node:node prisma.config.ts ./
-COPY --chown=node:node prisma ./prisma
+COPY --chown=node:node sync-backend/prisma.config.ts ./
+COPY --chown=node:node sync-backend/prisma ./prisma
 # `dist` already contains the compiled Prisma client at dist/src/generated,
 # which is what the runtime imports resolve to. No source tree is shipped.
 COPY --from=build --chown=node:node /app/dist ./dist
+COPY --from=web --chown=node:node /web/dist ./public
 
 EXPOSE 4000
 

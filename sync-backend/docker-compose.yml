@@ -37,7 +37,8 @@ services:
   #   SYNC_AUTH_SECRET="$(openssl rand -base64 32)" docker compose up
   api:
     build:
-      context: .
+      # The image also builds sync-web, so the context is the repository root.
+      context: ..
       target: production
     depends_on:
       postgres:
@@ -52,8 +53,8 @@ services:
       REDIS_URL: redis://redis:6379
       BETTER_AUTH_SECRET: ${SYNC_AUTH_SECRET:-sync-local-compose-secret-do-not-deploy}
       BETTER_AUTH_URL: http://localhost:4000
-      FRONTEND_ORIGIN: ${SYNC_FRONTEND_ORIGIN:-http://localhost:5173}
-      JOIN_URL_BASE: ${SYNC_JOIN_URL_BASE:-http://localhost:5173}
+      FRONTEND_ORIGIN: ${SYNC_FRONTEND_ORIGIN:-http://localhost:4000}
+      JOIN_URL_BASE: ${SYNC_JOIN_URL_BASE:-http://localhost:4000}
       PROVIDER_MODE: mock
       # captions = write up what people actually said during the call.
       TRANSCRIPTION_MODE: captions
@@ -68,7 +69,8 @@ services:
 
   worker:
     build:
-      context: .
+      # The image also builds sync-web, so the context is the repository root.
+      context: ..
       target: production
     command: ['node', 'dist/src/workers/worker.js']
     # The worker shares the API image but serves no HTTP, so it can never
@@ -89,7 +91,7 @@ services:
       REDIS_URL: redis://redis:6379
       BETTER_AUTH_SECRET: ${SYNC_AUTH_SECRET:-sync-local-compose-secret-do-not-deploy}
       BETTER_AUTH_URL: http://localhost:4000
-      FRONTEND_ORIGIN: ${SYNC_FRONTEND_ORIGIN:-http://localhost:5173}
+      FRONTEND_ORIGIN: ${SYNC_FRONTEND_ORIGIN:-http://localhost:4000}
       PROVIDER_MODE: mock
       # captions = write up what people actually said during the call.
       TRANSCRIPTION_MODE: captions

@@ -13,12 +13,18 @@ function positiveInt(value: string | undefined, fallback: number): number {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
+/**
+ * Where the API lives. A production build without VITE_API_BASE_URL is served
+ * by the backend itself, so the API is this page's own origin.
+ */
+function apiBaseUrl(): string {
+  const value = import.meta.env.VITE_API_BASE_URL;
+  if (!import.meta.env.DEV && !value?.trim()) return window.location.origin;
+  return required('VITE_API_BASE_URL', value, 'http://localhost:4000');
+}
+
 export const config = {
-  apiBaseUrl: required(
-    'VITE_API_BASE_URL',
-    import.meta.env.VITE_API_BASE_URL,
-    'http://localhost:4000',
-  ).replace(/\/+$/, ''),
+  apiBaseUrl: apiBaseUrl().replace(/\/+$/, ''),
   appName: import.meta.env.VITE_APP_NAME?.trim() || 'Sync',
   tagline: 'Everyone, at the same moment.',
   realtimePath: import.meta.env.VITE_REALTIME_PATH?.trim() || '/realtime',

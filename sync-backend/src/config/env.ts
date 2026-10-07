@@ -62,6 +62,10 @@ const envSchema = z
     RATE_LIMIT_AUTH_DURATION_SECONDS: positiveInt(60),
 
     RUN_WORKERS_IN_API_PROCESS: booleanish.default(false),
+
+    // Built frontend to serve from this process, so the SPA and the API share
+    // one origin. Unset in development, where Vite serves the frontend.
+    WEB_DIST_DIR: z.string().min(1).optional(),
   })
   .superRefine((value, ctx) => {
     if (value.NODE_ENV !== 'production') return;

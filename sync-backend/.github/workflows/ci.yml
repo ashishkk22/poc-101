@@ -130,4 +130,4 @@ jobs:
       - run: pnpm build
 
       - name: Build the production image
-        run: docker build --target production -t sync-backend:ci .
+        run: docker build --target production -t sync:ci ..
