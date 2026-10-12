@@ -135,9 +135,22 @@ SYNC_AUTH_SECRET="$(openssl rand -base64 32)" docker compose up
 The server refuses to boot in production mode with a placeholder secret — that
 check is deliberate, so a copied `.env.example` can never reach a deployment.
 
-- API — http://localhost:4000
+- App + API — http://localhost:4000 (the image serves the built frontend)
 - Health — http://localhost:4000/health
 - Readiness — http://localhost:4000/ready
+
+The frontend can also run from source against this stack: `pnpm dev` in
+`sync-web` serves it on http://localhost:5173, which the Compose CORS allowlist
+already includes. To allow other origins, set `SYNC_FRONTEND_ORIGIN` to a
+comma-separated list (it replaces the default, so keep any you still need):
+
+```bash
+SYNC_FRONTEND_ORIGIN="http://localhost:4000,http://localhost:5173,http://192.168.1.20:4000" docker compose up
+```
+
+A request from an origin outside the allowlist fails in the browser as a CORS
+error; the API logs `cors: origin not in FRONTEND_ORIGIN` with the offending
+origin.
 
 Containers address each other by **service name** (`postgres`, `redis`), never
 by IP.

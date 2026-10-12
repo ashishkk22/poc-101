@@ -285,7 +285,7 @@ function dispatch(server: SocketIOServer, payload: RealtimePayload): void {
       // Only the affected participant is told, and they are removed from the
       // call room so subsequent call-wide events no longer reach them.
       server.to(rooms.user(payload.participantId)).emit(payload.type, payload);
-      void server.in(rooms.user(payload.participantId)).socketsLeave(rooms.call(payload.callId));
+      evictFromCall(server, payload.participantId, payload.callId);
       break;
     }
     case 'CALL_ENDED':
@@ -296,6 +296,27 @@ function dispatch(server: SocketIOServer, payload: RealtimePayload): void {
       server.to(rooms.call(payload.callId)).emit(payload.type, payload);
       break;
     }
+  }
+}
+
+/**
+ * Takes a participant's sockets out of a call without their cooperation.
+ *
+ * Leaving the room is not enough on its own: the socket's admitted-calls set
+ * is what the signal and caption relays check, and the peers still in the room
+ * hold a media connection to it until they hear it has gone. Every replica
+ * receives the Pub/Sub message, so each one handles only the sockets it holds.
+ */
+function evictFromCall(server: SocketIOServer, participantId: string, callId: string): void {
+  const socketIds = server.sockets.adapter.rooms.get(rooms.user(participantId));
+  if (!socketIds) return;
+
+  for (const socketId of socketIds) {
+    const socket = server.sockets.sockets.get(socketId);
+    if (!socket || !(socket.data as SocketData).calls.delete(callId)) continue;
+
+    void socket.leave(rooms.call(callId));
+    announceDeparture(server, socket, callId);
   }
 }
 

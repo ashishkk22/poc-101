@@ -4,6 +4,7 @@ import express, { type Express } from 'express';
 import helmet from 'helmet';
 import { AUTH_BASE_PATH } from '../config/constants.js';
 import { allowedOrigins, env, isProduction } from '../config/env.js';
+import { logger } from '../infrastructure/logger/logger.js';
 import { auth } from '../modules/auth/auth.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { notFoundHandler } from './middleware/not-found.js';
@@ -17,7 +18,6 @@ import { createWebRouter } from './web.routes.js';
 export function createApp(): Express {
   const app = express();
 
-  // Behind a load balancer, req.ip must reflect the real client for rate limiting.
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
 
@@ -54,6 +54,9 @@ export function createApp(): Express {
           callback(null, true);
           return;
         }
+        // The browser only reports this as an opaque CORS failure, so say
+        // here which origin needs adding to FRONTEND_ORIGIN.
+        logger.warn({ origin, allowedOrigins }, 'cors: origin not in FRONTEND_ORIGIN');
         callback(null, false);
       },
       credentials: true,

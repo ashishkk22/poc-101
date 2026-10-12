@@ -18,6 +18,15 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
   trustedOrigins: allowedOrigins,
+  /**
+   * Rate limiting is owned by the Redis-backed `authRateLimit` middleware.
+   *
+   * Better Auth's own limiter is in-memory and reads the client address from
+   * headers only, which Express does not forward to it. It therefore lumps
+   * every client into one bucket per path, so a handful of requests from
+   * anyone locks everyone out of signing in.
+   */
+  rateLimit: { enabled: false },
   emailAndPassword: {
     enabled: true,
     // No mail transport is wired in this backend as of now

@@ -18,7 +18,7 @@ import {
 import { AuditAction } from '../audit/audit.actions.js';
 import { auditService } from '../audit/audit.service.js';
 import { recomputeAttendanceTotals } from '../attendance/attendance.service.js';
-import { publishInvitationRevoked } from '../realtime/publisher.js';
+import { publishInvitationRevoked, publishParticipantLeft } from '../realtime/publisher.js';
 import {
   toInvitationDto,
   toMyInvitationDto,
@@ -280,6 +280,19 @@ export const invitationService = {
         participantId: invitation.participantId,
         revokedAt: outcome.revokedAt,
       });
+
+      // Everyone else in the room drops them from the roster now, rather than
+      // on their next poll.
+      if ((outcome.sessions ?? []).length > 0) {
+        const person = await prisma.user
+          .findUnique({ where: { id: invitation.participantId }, select: { name: true } })
+          .catch(() => null);
+        await publishParticipantLeft({
+          callId: call.id,
+          participantId: invitation.participantId,
+          name: person?.name ?? 'Participant',
+        });
+      }
 
       for (const session of outcome.sessions ?? []) {
         if (!session.providerSessionId) continue;
