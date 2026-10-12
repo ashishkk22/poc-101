@@ -2,6 +2,7 @@ export {
   useWebRtcMesh,
   MESH_LIMIT,
   PeerState,
+  type MediaFlags,
   type RemotePeer,
 } from "./useWebRtcMesh";
 export {

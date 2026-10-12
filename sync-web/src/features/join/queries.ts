@@ -1,5 +1,6 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { callsApi, joinApi } from '@/lib/api';
+import { ApiError, ErrorCode } from '@/lib/errors';
 import type {
   CallParticipant,
   JoinResult,
@@ -40,9 +41,30 @@ export function useResolveLink(token: string | null) {
 }
 
 /** Entry by identity: the organizer's own call, or a signed-in invitee. */
+/**
+ * Refusals that mean what the app last showed is out of date. A revoke the
+ * socket never delivered would otherwise leave "Join" on the call's pages,
+ * offering a door the server has already shut.
+ */
+const STALE_ENTRY = new Set<string>([
+  ErrorCode.INVITE_REVOKED,
+  ErrorCode.INVITE_EXPIRED,
+  ErrorCode.CALL_CANCELLED,
+  ErrorCode.CALL_NOT_JOINABLE,
+  ErrorCode.JOIN_WINDOW_CLOSED,
+]);
+
 export function useJoinCall() {
+  const queryClient = useQueryClient();
+
   return useMutation<JoinResult, unknown, { callId: string; deviceId: string }>({
     mutationFn: ({ callId, deviceId }) => callsApi.join(callId, { deviceId }),
+    onError: (error, { callId }) => {
+      if (!ApiError.isApiError(error) || !STALE_ENTRY.has(error.code)) return;
+      void queryClient.invalidateQueries({ queryKey: ['call', callId] });
+      void queryClient.invalidateQueries({ queryKey: ['calls'] });
+      void queryClient.invalidateQueries({ queryKey: ['invitations', 'mine'] });
+    },
   });
 }
 

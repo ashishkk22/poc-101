@@ -13,7 +13,7 @@ import { authorizeCallManage, authorizeCallRead, unwrap } from '../access/index.
 import { meetingProvider } from '../provider/index.js';
 import { publishCallEnded } from '../realtime/publisher.js';
 import { assertCancellable, assertTransition, expectedStatusAt } from './call.domain.js';
-import { toCallDto, type CallDto } from './call.dto.js';
+import { effectiveInvitationStatus, toCallDto, type CallDto } from './call.dto.js';
 import { callRepository } from './call.repository.js';
 import { type CreateCallInput, type ListCallsQuery } from './call.schemas.js';
 
@@ -122,7 +122,16 @@ export const callService = {
     const { call } = unwrap(await authorizeCallRead({ userId: actorUserId, callId }));
     const record = await callRepository.findById(call.id);
     if (!record) throw new AppError(ErrorCode.CALL_NOT_FOUND);
-    return toCallDto(record);
+
+    const invitation =
+      record.organizerId === actorUserId
+        ? null
+        : await callRepository.findViewerInvitation(call.id, actorUserId);
+
+    return {
+      ...toCallDto(record),
+      viewerInvitationStatus: effectiveInvitationStatus(invitation, systemClock.now()),
+    };
   },
 
   async list(
@@ -140,7 +149,18 @@ export const callService = {
     });
 
     const page = buildPage(rows, query.limit, (row) => row.scheduledStart);
-    return { items: page.items.map(toCallDto), nextCursor: page.nextCursor };
+    const now = systemClock.now();
+
+    return {
+      items: page.items.map((row) => ({
+        ...toCallDto(row),
+        viewerInvitationStatus:
+          row.organizerId === actorUserId
+            ? null
+            : effectiveInvitationStatus(row.invitations[0], now),
+      })),
+      nextCursor: page.nextCursor,
+    };
   },
 
   /**

@@ -35,7 +35,10 @@ interface RealtimeContextValue {
   status: RealtimeStatus;
   /** Returns an unsubscribe function; safe to call when disconnected. */
   on: <E extends RealtimeEvent>(event: E, listener: Listener<E>) => () => void;
-  subscribeCall: (callId: string) => Promise<{
+  subscribeCall: (
+    callId: string,
+    options?: { media?: boolean },
+  ) => Promise<{
     ok: boolean;
     code?: string;
     peers?: PeerDescriptor[];
@@ -162,12 +165,16 @@ export function useRealtimeEvent<E extends RealtimeEvent>(
  * On success the ack also reports who is already in the room, which is what
  * the WebRTC mesh needs to know who to connect to.
  */
-export function useCallRoom(callId: string | null | undefined): {
+export function useCallRoom(
+  callId: string | null | undefined,
+  options: { media?: boolean } = {},
+): {
   joined: boolean;
   code?: string;
   peers: PeerDescriptor[] | null;
 } {
   const { status, subscribeCall, unsubscribeCall } = useRealtime();
+  const media = options.media === true;
   const [state, setState] = useState<{
     joined: boolean;
     code?: string;
@@ -181,7 +188,7 @@ export function useCallRoom(callId: string | null | undefined): {
     }
 
     let cancelled = false;
-    void subscribeCall(callId).then(ack => {
+    void subscribeCall(callId, { media }).then(ack => {
       if (cancelled) return;
       setState(
         ack.ok
@@ -194,7 +201,7 @@ export function useCallRoom(callId: string | null | undefined): {
       cancelled = true;
       unsubscribeCall(callId);
     };
-  }, [callId, status, subscribeCall, unsubscribeCall]);
+  }, [callId, media, status, subscribeCall, unsubscribeCall]);
 
   return state;
 }

@@ -1,4 +1,4 @@
-import { type CallStatus } from '../../generated/prisma/enums.js';
+import { type CallStatus, type InvitationStatus } from '../../generated/prisma/enums.js';
 
 /**
  * Explicit DTOs.
@@ -17,6 +17,12 @@ export interface CallDto {
   createdAt: string;
   // When the meeting actually ended, which can be before scheduledEnd.
   endedAt: string | null;
+  /**
+   * The caller's own invitation to this call, as of now: null for the
+   * organizer, who needs none. A hint for whether to offer "Join" — entry
+   * itself is still decided by the access policy.
+   */
+  viewerInvitationStatus?: InvitationStatus | null;
 }
 
 export interface CallSummaryDto extends CallDto {
@@ -75,4 +81,19 @@ export function toJoinCallDto(call: {
     timezone: call.timezone,
     status: call.status,
   };
+}
+
+/**
+ * The stored status is reconciled lazily, so an invitation past its expiry
+ * can still read ACTIVE in the row. Report what it effectively is.
+ */
+export function effectiveInvitationStatus(
+  invitation: { status: InvitationStatus; expiresAt: Date } | null | undefined,
+  now: Date,
+): InvitationStatus | null {
+  if (!invitation) return null;
+  if (invitation.status === 'ACTIVE' && invitation.expiresAt.getTime() <= now.getTime()) {
+    return 'EXPIRED';
+  }
+  return invitation.status;
 }

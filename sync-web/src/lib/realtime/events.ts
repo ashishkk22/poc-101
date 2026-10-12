@@ -122,7 +122,13 @@ export interface PeerLeftPayload {
 export type SignalData =
   | { kind: 'offer'; sdp: RTCSessionDescriptionInit }
   | { kind: 'answer'; sdp: RTCSessionDescriptionInit }
-  | { kind: 'ice'; candidate: RTCIceCandidateInit };
+  | { kind: 'ice'; candidate: RTCIceCandidateInit }
+  /**
+   * The sender's mic and camera switches. A disabled track still arrives
+   * "enabled" on the far side — silence and black frames — so the receiver
+   * cannot tell a muted peer from a quiet one without being told.
+   */
+  | { kind: 'media'; micOn: boolean; cameraOn: boolean };
 
 export interface SignalPayload {
   callId: string;

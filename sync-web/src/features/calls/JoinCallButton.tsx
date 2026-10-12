@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Button, type ButtonProps } from "@/components/ui/Button";
 import type { Call } from "@/lib/api/types";
 import { parse } from "@/lib/date/format";
-import { CallStatus } from "@/lib/api/types";
+import { CallStatus, InvitationStatus } from "@/lib/api/types";
 
 /**
  * Entry to a call.
@@ -18,6 +18,14 @@ export function canEnter(call: Call): boolean {
     call.status === CallStatus.CANCELLED ||
     call.status === CallStatus.ENDED ||
     call.status === CallStatus.DRAFT
+  ) {
+    return false;
+  }
+
+  // An invitee whose invitation was taken back or ran out has no way in.
+  if (
+    call.viewerInvitationStatus &&
+    call.viewerInvitationStatus !== InvitationStatus.ACTIVE
   ) {
     return false;
   }

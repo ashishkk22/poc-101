@@ -113,7 +113,7 @@ export interface SignalPayload {
   callId: string;
   /** Sender, filled in by the server — never trusted from the client. */
   from: string;
-  /** Opaque to the server: an SDP offer/answer or an ICE candidate. */
+  /** Opaque to the server: an SDP offer/answer, an ICE candidate or mic/camera state. */
   data: unknown;
 }
 
@@ -135,5 +135,7 @@ export interface CaptionUtterancePayload {
 export const rooms = {
   user: (userId: string) => `user:${userId}`,
   call: (callId: string) => `call:${callId}`,
+  /** Sockets sending media in a call: the WebRTC mesh, a subset of `call`. */
+  media: (callId: string) => `call:${callId}:media`,
   session: (attendanceSessionId: string) => `session:${attendanceSessionId}`,
 } as const;

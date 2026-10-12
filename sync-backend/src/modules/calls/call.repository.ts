@@ -40,6 +40,14 @@ export const callRepository = {
     return db.call.findUnique({ where: { id } });
   },
 
+  /** One caller's own invitation to a call, if they have one. */
+  async findViewerInvitation(callId: string, userId: string, db: DbClient = prisma) {
+    return db.invitation.findUnique({
+      where: { callId_participantId: { callId, participantId: userId } },
+      select: { status: true, expiresAt: true },
+    });
+  },
+
   /**
    * Keyset pagination over (scheduledStart DESC, id DESC), matching the
    * `organizerId + scheduledStart DESC` index. Fetches limit + 1 rows so the
@@ -83,6 +91,14 @@ export const callRepository = {
 
     return db.call.findMany({
       where,
+      // Only the caller's own invitation, so each row can say whether they
+      // may still enter. Nobody else's invitation is ever read here.
+      include: {
+        invitations: {
+          where: { participantId: filter.userId },
+          select: { status: true, expiresAt: true },
+        },
+      },
       orderBy: [{ scheduledStart: 'desc' }, { id: 'desc' }],
       take: filter.limit + 1,
     });

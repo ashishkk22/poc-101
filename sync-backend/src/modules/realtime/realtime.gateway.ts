@@ -23,6 +23,14 @@ interface SocketData {
   user: AuthenticatedUser;
   /** Calls this socket has been admitted to, for cheap sender checks. */
   calls: Set<string>;
+  /** The subset of those calls this socket is a media peer in. */
+  media: Set<string>;
+  /**
+   * The latest subscribe/unsubscribe per call. Authorization is async, so a
+   * quick subscribe → unsubscribe → subscribe (a remount) can finish out of
+   * order; only the most recent request is allowed to take effect.
+   */
+  intents: Map<string, number>;
 }
 
 let io: SocketIOServer | null = null;
@@ -57,6 +65,8 @@ export function createRealtimeGateway(httpServer: HttpServer): SocketIOServer {
     }
     (socket.data as SocketData).user = session.user;
     (socket.data as SocketData).calls = new Set();
+    (socket.data as SocketData).media = new Set();
+    (socket.data as SocketData).intents = new Map();
     // Personal room: targeted events need no call-level membership.
     await socket.join(rooms.user(session.user.id));
     next();
@@ -67,15 +77,25 @@ export function createRealtimeGateway(httpServer: HttpServer): SocketIOServer {
     logger.debug({ userId: user.id, socketId: socket.id }, 'socket connected');
 
     socket.on('call:subscribe', async (payload: unknown, ack?: (result: unknown) => void) => {
-      const callId =
-        typeof payload === 'object' && payload !== null && 'callId' in payload
-          ? String((payload as { callId: unknown }).callId)
+      const message =
+        typeof payload === 'object' && payload !== null
+          ? (payload as { callId?: unknown; media?: unknown })
           : null;
+      const callId = message && 'callId' in message ? String(message.callId) : null;
+      // Only the call room itself sends media. A page that merely watches the
+      // call (its details page) hears the same events but is nobody's peer —
+      // listing it as one would leave a tile "connecting" to a page that
+      // will never answer.
+      const media = message?.media === true;
 
       if (!callId) {
         ack?.({ ok: false, code: 'VALIDATION_ERROR' });
         return;
       }
+
+      const data = socket.data as SocketData;
+      const intent = (data.intents.get(callId) ?? 0) + 1;
+      data.intents.set(callId, intent);
 
       // Server-side membership validation — the client's claim is irrelevant.
       const decision = await authorizeRealtimeCallRoom({
@@ -90,20 +110,41 @@ export function createRealtimeGateway(httpServer: HttpServer): SocketIOServer {
         return;
       }
 
-      await socket.join(rooms.call(callId));
-      (socket.data as SocketData).calls.add(callId);
+      // Overtaken by a later subscribe or unsubscribe while authorizing.
+      if (data.intents.get(callId) !== intent) {
+        ack?.({ ok: false, code: 'SUPERSEDED' });
+        return;
+      }
 
-      // Existing members, so the newcomer knows who to offer to. The
-      // convention is that the ESTABLISHED peer sends the offer, which is what
-      // keeps two browsers from offering each other at once.
+      await socket.join(rooms.call(callId));
+      data.calls.add(callId);
+
+      const self = describePeer(socket, decision.value.relation === 'ORGANIZER');
+
+      if (!media) {
+        // Stepping back from the call to just watching it is a departure.
+        if (data.media.has(callId)) await leaveMedia(server, socket, callId);
+        ack?.({ ok: true, peers: [], self });
+        return;
+      }
+
+      // Re-subscribing an admitted peer is not an arrival: telling the room
+      // again would make everyone renegotiate a connection that works.
+      const alreadyPeer = data.media.has(callId);
+
+      await socket.join(rooms.media(callId));
+      data.media.add(callId);
+
+      // Existing peers, so the newcomer knows who it is about to hear from.
+      // The convention is that the ESTABLISHED peer sends the offer, which is
+      // what keeps two browsers from offering each other at once.
       const peers = await listPeers(server, callId, socket.id);
 
-      ack?.({ ok: true, peers, self: describePeer(socket, decision.value.relation === 'ORGANIZER') });
+      ack?.({ ok: true, peers, self });
 
-      socket.to(rooms.call(callId)).emit(SignalEvent.PEER_JOINED, {
-        callId,
-        ...describePeer(socket, decision.value.relation === 'ORGANIZER'),
-      });
+      if (alreadyPeer) return;
+
+      socket.to(rooms.media(callId)).emit(SignalEvent.PEER_JOINED, { callId, ...self });
     });
 
     socket.on('call:unsubscribe', async (payload: unknown) => {
@@ -113,9 +154,14 @@ export function createRealtimeGateway(httpServer: HttpServer): SocketIOServer {
           : null;
       if (!callId) return;
 
+      const data = socket.data as SocketData;
+      data.intents.set(callId, (data.intents.get(callId) ?? 0) + 1);
+
+      if (data.media.has(callId)) await leaveMedia(server, socket, callId);
+      if (!data.calls.has(callId)) return;
+
+      data.calls.delete(callId);
       await socket.leave(rooms.call(callId));
-      (socket.data as SocketData).calls.delete(callId);
-      announceDeparture(server, socket, callId);
     });
 
     /**
@@ -131,7 +177,7 @@ export function createRealtimeGateway(httpServer: HttpServer): SocketIOServer {
       const to = typeof message?.to === 'string' ? message.to : null;
       if (!callId || !to) return;
 
-      if (!(socket.data as SocketData).calls.has(callId)) {
+      if (!(socket.data as SocketData).media.has(callId)) {
         logger.warn({ userId: user.id, callId }, 'signal from a socket outside the call room');
         return;
       }
@@ -190,7 +236,7 @@ export function createRealtimeGateway(httpServer: HttpServer): SocketIOServer {
 
     socket.on('disconnecting', () => {
       // `socket.rooms` is still populated here; after 'disconnect' it is not.
-      for (const callId of (socket.data as SocketData).calls) {
+      for (const callId of (socket.data as SocketData).media) {
         announceDeparture(server, socket, callId);
       }
     });
@@ -218,7 +264,7 @@ async function listPeers(
   callId: string,
   exceptSocketId: string,
 ): Promise<PeerDescriptor[]> {
-  const sockets = await server.in(rooms.call(callId)).fetchSockets();
+  const sockets = await server.in(rooms.media(callId)).fetchSockets();
 
   return sockets
     .filter((remote) => remote.id !== exceptSocketId)
@@ -234,20 +280,27 @@ async function listPeers(
     });
 }
 
-/** Confirms a relay target is genuinely a member of that call's room. */
+/** Confirms a relay target is genuinely a media peer in that call. */
 async function isPeerInCall(
   server: SocketIOServer,
   peerId: string,
   callId: string,
 ): Promise<boolean> {
   const [target] = await server.in(peerId).fetchSockets();
-  return Boolean(target?.rooms.has(rooms.call(callId)));
+  return Boolean(target?.rooms.has(rooms.media(callId)));
+}
+
+/** Stops being a media peer in a call, and tells the peers left behind. */
+async function leaveMedia(server: SocketIOServer, socket: Socket, callId: string): Promise<void> {
+  (socket.data as SocketData).media.delete(callId);
+  await socket.leave(rooms.media(callId));
+  announceDeparture(server, socket, callId);
 }
 
 function announceDeparture(server: SocketIOServer, socket: Socket, callId: string): void {
   const { user } = socket.data as SocketData;
   server
-    .to(rooms.call(callId))
+    .to(rooms.media(callId))
     .emit(SignalEvent.PEER_LEFT, { callId, peerId: socket.id, userId: user.id });
 }
 
@@ -315,8 +368,12 @@ function evictFromCall(server: SocketIOServer, participantId: string, callId: st
     const socket = server.sockets.sockets.get(socketId);
     if (!socket || !(socket.data as SocketData).calls.delete(callId)) continue;
 
+    // A later subscribe already in flight must not undo the eviction.
+    const { intents } = socket.data as SocketData;
+    intents.set(callId, (intents.get(callId) ?? 0) + 1);
+
     void socket.leave(rooms.call(callId));
-    announceDeparture(server, socket, callId);
+    if ((socket.data as SocketData).media.has(callId)) void leaveMedia(server, socket, callId);
   }
 }
 

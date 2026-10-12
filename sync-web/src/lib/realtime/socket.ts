@@ -44,9 +44,13 @@ export function disconnectSocket(): void {
  * Asks the server to join a call room; it may refuse, and refusal is final.
  *
  * On success the ack carries the peers already in the room, which is what the
- * mesh uses to decide who to offer to.
+ * mesh uses to decide who to offer to. Only a `media` subscriber is a peer;
+ * anyone else just hears the call's events.
  */
-export function subscribeToCall(callId: string): Promise<SubscribeResult> {
+export function subscribeToCall(
+  callId: string,
+  options: { media?: boolean } = {},
+): Promise<SubscribeResult> {
   return new Promise(resolve => {
     const active = getSocket();
     if (!active.connected) {
@@ -58,7 +62,8 @@ export function subscribeToCall(callId: string): Promise<SubscribeResult> {
       () => resolve({ ok: false, code: "TIMEOUT" }),
       5000,
     );
-    active.emit("call:subscribe", { callId }, (ack: SubscribeResult) => {
+    const payload = { callId, media: options.media === true };
+    active.emit("call:subscribe", payload, (ack: SubscribeResult) => {
       clearTimeout(timeout);
       resolve(ack ?? { ok: false, code: "NO_ACK" });
     });

@@ -236,7 +236,9 @@ export function CallRoomPage(): React.JSX.Element {
   });
 
   // The room subscription both authorizes us and tells us who is already here.
-  const room = useCallRoom(session ? callId : null);
+  // As a media peer: the details page listens to the same room, but only
+  // this page sends audio and video, so only this page is anyone's peer.
+  const room = useCallRoom(session ? callId : null, { media: true });
 
   /**
    * The media plane.
@@ -247,6 +249,12 @@ export function CallRoomPage(): React.JSX.Element {
   const mesh = useWebRtcMesh({
     callId: session ? callId : null,
     localStream: media.stream,
+    // What others see must match what is sent: no stream means nothing is
+    // going out, whatever the switches say.
+    localMedia: {
+      micOn: media.micOn && Boolean(media.stream?.getAudioTracks().length),
+      cameraOn: media.cameraOn && Boolean(media.stream?.getVideoTracks().length),
+    },
     initialPeers: room.peers,
     enabled: active && room.joined,
   });
@@ -273,10 +281,62 @@ export function CallRoomPage(): React.JSX.Element {
     CallParticipant[] | null
   >(null);
 
-  const participants = useMemo(
+  /** Who has an attendance session open — the record, not the room. */
+  const recorded = useMemo(
     () => optimisticRoster ?? roster.data ?? [],
     [optimisticRoster, roster.data],
   );
+
+  /**
+   * Who is in the call right now: us, plus every peer live in the room.
+   *
+   * The attendance record is not enough on its own. A session stays open
+   * until its heartbeat lapses, so someone who navigated away, lost their
+   * network or had their tab killed would linger in the list — the host
+   * shown "in the call" to a guest who is plainly alone. The room's live
+   * peers are who is actually here; the record only lends names and arrival
+   * times. Without the room (realtime down) the record is all there is.
+   */
+  const firstSeen = useRef(new Map<string, string>());
+  const participants = useMemo<CallParticipant[]>(() => {
+    if (!room.joined || !user) return recorded;
+
+    const known = new Map(recorded.map(person => [person.id, person]));
+    const present = new Map<string, CallParticipant>();
+
+    const add = (userId: string, name: string, organizer: boolean) => {
+      const existing = present.get(userId);
+      if (existing) {
+        existing.connections += 1;
+        return;
+      }
+      const record = known.get(userId);
+      let seen = firstSeen.current.get(userId);
+      if (!seen) {
+        seen = new Date().toISOString();
+        firstSeen.current.set(userId, seen);
+      }
+      present.set(userId, {
+        id: userId,
+        name: record?.name ?? (name || "Participant"),
+        isOrganizer: record?.isOrganizer ?? organizer,
+        joinedAt: record?.joinedAt ?? seen,
+        connections: 1,
+      });
+    };
+
+    add(user.id, user.name, isOrganizer);
+    // A peer we answered before learning who it was has no user yet; it is
+    // counted the moment the join's peer list names it.
+    for (const peer of mesh.peers) {
+      if (peer.userId) add(peer.userId, peer.name, peer.isOrganizer);
+    }
+
+    return [...present.values()].sort((a, b) =>
+      a.joinedAt.localeCompare(b.joinedAt),
+    );
+  }, [room.joined, user, isOrganizer, recorded, mesh.peers]);
+
   const others = useMemo(
     () => participants.filter(person => person.id !== user?.id),
     [participants, user?.id],
@@ -561,12 +621,18 @@ export function CallRoomPage(): React.JSX.Element {
             {mesh.peers.map(peer => (
               <VideoTile
                 key={peer.peerId}
-                name={peer.name || nameFor(peer.userId, others)}
+                name={peer.name || nameFor(peer.userId, recorded)}
                 stream={peer.stream}
-                cameraOn
-                micOn
+                cameraOn={peer.cameraOn}
+                micOn={peer.micOn}
                 state={peer.state}
-                isOrganizer={peer.isOrganizer}
+                // The join's peer list leaves this unset; the record knows.
+                isOrganizer={
+                  peer.isOrganizer ||
+                  recorded.some(
+                    person => person.id === peer.userId && person.isOrganizer,
+                  )
+                }
               />
             ))}
           </div>
@@ -705,7 +771,7 @@ export function CallRoomPage(): React.JSX.Element {
               participants={participants}
               currentUserId={user?.id}
               isOrganizer={isOrganizer}
-              loading={roster.isPending}
+              loading={!room.joined && roster.isPending}
               inviteOpen={inviteOpen}
               onInviteOpenChange={setInviteOpen}
             />

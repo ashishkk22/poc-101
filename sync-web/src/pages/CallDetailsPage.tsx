@@ -40,7 +40,7 @@ import { TranscriptView } from "@/features/transcript";
 import { RealtimeEvent, useCallRoom, useRealtimeEvent } from "@/lib/realtime";
 import { formatWindow } from "@/lib/date/format";
 import { notify } from "@/lib/toast";
-import { CallStatus } from "@/lib/api/types";
+import { CallStatus, InvitationStatus } from "@/lib/api/types";
 
 /**
  * The organizer's control surface for one call.
@@ -95,7 +95,13 @@ export function CallDetailsPage(): React.JSX.Element {
             <span>{formatWindow(data.scheduledStart, data.scheduledEnd)}</span>
             <span className="inline-flex items-center gap-1.5 text-xs">
               <ShieldCheck className="size-3.5" aria-hidden="true" />
-              {isOrganizer ? "You're hosting" : "You're invited"}
+              {isOrganizer
+                ? "You're hosting"
+                : data.viewerInvitationStatus === InvitationStatus.REVOKED
+                  ? "The host took back your invite"
+                  : data.viewerInvitationStatus === InvitationStatus.EXPIRED
+                    ? "Your invite has run out"
+                    : "You're invited"}
             </span>
           </span>
         }

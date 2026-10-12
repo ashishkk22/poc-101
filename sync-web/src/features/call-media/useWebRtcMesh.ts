@@ -46,10 +46,22 @@ export const PeerState = {
 } as const;
 export type PeerState = (typeof PeerState)[keyof typeof PeerState];
 
-export interface RemotePeer extends PeerDescriptor {
+/** Mic and camera switches, as a participant has set them. */
+export interface MediaFlags {
+  micOn: boolean;
+  cameraOn: boolean;
+}
+
+export interface RemotePeer extends PeerDescriptor, MediaFlags {
   stream: MediaStream | null;
   state: PeerState;
 }
+
+/**
+ * Until a peer says otherwise it is shown as on — what an older client that
+ * never reports its state would be showing anyway.
+ */
+const UNKNOWN_MEDIA: MediaFlags = { micOn: true, cameraOn: true };
 
 interface Connection {
   pc: RTCPeerConnection;
@@ -71,20 +83,28 @@ type UseWebRtcMeshOptions = {
   callId: string | null;
   /** The local camera/mic. Tracks are published as soon as it exists. */
   localStream: MediaStream | null;
+  /** Our own mic/camera switches, announced to every peer as they change. */
+  localMedia: MediaFlags;
   /** Peers the server reported when this socket joined the room. */
   initialPeers: PeerDescriptor[] | null;
   enabled: boolean;
 };
 
 export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
-  const { callId, localStream, initialPeers, enabled } = options;
+  const { callId, localStream, localMedia, initialPeers, enabled } = options;
+  const { micOn, cameraOn } = localMedia;
 
   const [peers, setPeers] = useState<RemotePeer[]>([]);
 
   const connections = useRef(new Map<string, Connection>());
   const remoteStreams = useRef(new Map<string, MediaStream>());
+  const remoteMedia = useRef(new Map<string, MediaFlags>());
+  /** Peers seen leaving, so a join reply read late cannot bring them back. */
+  const departed = useRef(new Set<string>());
   const localStreamRef = useRef<MediaStream | null>(null);
   localStreamRef.current = localStream;
+  const localMediaRef = useRef<MediaFlags>({ micOn, cameraOn });
+  localMediaRef.current = { micOn, cameraOn };
 
   // --- state plumbing ------------------------------------------------------
 
@@ -92,6 +112,8 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
     setPeers(
       [...connections.current.values()].map(connection => ({
         ...connection.descriptor,
+        ...UNKNOWN_MEDIA,
+        ...remoteMedia.current.get(connection.descriptor.peerId),
         stream: remoteStreams.current.get(connection.descriptor.peerId) ?? null,
         state: toPeerState(connection.pc),
       })),
@@ -106,12 +128,65 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
     [callId],
   );
 
+  const announceMedia = useCallback(
+    (to: string) => send(to, { kind: "media", ...localMediaRef.current }),
+    [send],
+  );
+
   // --- connection lifecycle ------------------------------------------------
+
+  /**
+   * Puts our current tracks on every negotiated sender.
+   *
+   * Each connection carries one audio and one video transceiver, both
+   * negotiated send-and-receive from the start, even with nothing to send yet.
+   * A camera that is granted late is then just `replaceTrack` — no second
+   * round of negotiation, which is what used to leave a late joiner unseen.
+   */
+  const attachLocalTracks = useCallback(async (pc: RTCPeerConnection) => {
+    const stream = localStreamRef.current;
+    for (const transceiver of pc.getTransceivers()) {
+      if (transceiver.currentDirection === "stopped") continue;
+      const kind = transceiver.receiver.track.kind;
+      const track =
+        stream?.getTracks().find(candidate => candidate.kind === kind) ?? null;
+      if (transceiver.sender.track === track) continue;
+      await transceiver.sender.replaceTrack(track).catch(() => undefined);
+    }
+  }, []);
+
+  const makeOffer = useCallback(
+    async (connection: Connection) => {
+      const { pc } = connection;
+      try {
+        connection.makingOffer = true;
+        await pc.setLocalDescription();
+        if (pc.localDescription?.type === "offer") {
+          send(connection.descriptor.peerId, {
+            kind: "offer",
+            sdp: pc.localDescription.toJSON(),
+          });
+        }
+      } catch {
+        // The peer can still reach us; nothing is left half-applied.
+      } finally {
+        connection.makingOffer = false;
+      }
+    },
+    [send],
+  );
 
   const createConnection = useCallback(
     (descriptor: PeerDescriptor, isPolite: boolean): Connection => {
       const existing = connections.current.get(descriptor.peerId);
-      if (existing) return existing;
+      if (existing) {
+        // We answered this peer before learning who it was; now we know.
+        if (!existing.descriptor.userId && descriptor.userId) {
+          existing.descriptor = descriptor;
+          publish();
+        }
+        return existing;
+      }
 
       const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
 
@@ -124,15 +199,37 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
       };
       connections.current.set(descriptor.peerId, connection);
 
-      // Our own tracks go out on this connection.
-      const stream = localStreamRef.current;
-      if (stream) {
-        for (const track of stream.getTracks()) pc.addTrack(track, stream);
+      // The offering side lays out the media lines; the answering side takes
+      // the ones it is offered and attaches to those instead.
+      if (!isPolite) {
+        const stream = localStreamRef.current;
+        for (const kind of ["audio", "video"] as const) {
+          const track =
+            stream?.getTracks().find(candidate => candidate.kind === kind) ??
+            null;
+          pc.addTransceiver(track ?? kind, { direction: "sendrecv" });
+        }
       }
 
+      // Any change that needs a fresh offer — the first one, or an ICE
+      // restart — goes through here, on either side.
+      pc.onnegotiationneeded = () => {
+        void makeOffer(connection);
+      };
+
       pc.ontrack = event => {
-        const [incoming] = event.streams;
-        if (incoming) remoteStreams.current.set(descriptor.peerId, incoming);
+        // Built from the tracks, not the sender's stream: a transceiver that
+        // started with nothing to send arrives with no stream at all. A new
+        // object each time, so the tile re-attaches it.
+        const previous = remoteStreams.current.get(descriptor.peerId);
+        const others =
+          previous
+            ?.getTracks()
+            .filter(track => track.kind !== event.track.kind) ?? [];
+        remoteStreams.current.set(
+          descriptor.peerId,
+          new MediaStream([...others, event.track]),
+        );
         publish();
       };
 
@@ -148,13 +245,18 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
       pc.onconnectionstatechange = () => {
         // One fresh gathering pass before a failure is treated as final.
         if (pc.connectionState === "failed") pc.restartIce();
+        // Said again once connected, in case the first word arrived before
+        // the other side knew who we were.
+        if (pc.connectionState === "connected")
+          announceMedia(descriptor.peerId);
         publish();
       };
 
+      announceMedia(descriptor.peerId);
       publish();
       return connection;
     },
-    [publish, send],
+    [publish, send, announceMedia, makeOffer],
   );
 
   const closeConnection = useCallback(
@@ -165,10 +267,12 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
       connection.pc.ontrack = null;
       connection.pc.onicecandidate = null;
       connection.pc.onconnectionstatechange = null;
+      connection.pc.onnegotiationneeded = null;
       connection.pc.close();
 
       connections.current.delete(peerId);
       remoteStreams.current.delete(peerId);
+      remoteMedia.current.delete(peerId);
       publish();
     },
     [publish],
@@ -176,8 +280,15 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
 
   // --- signalling ----------------------------------------------------------
 
+  /*
+   * Listening starts as soon as there is a call, not once the room join has
+   * rendered. The peers already here offer the instant the server announces
+   * us, and that offer can land before React has caught up with the join —
+   * dropped, it left both tiles "connecting" for good. The server only relays
+   * to a socket it has admitted, so nothing arrives here early by mistake.
+   */
   useEffect(() => {
-    if (!enabled || !callId) return;
+    if (!callId) return;
 
     async function drainCandidates(connection: Connection): Promise<void> {
       const queued = connection.pendingCandidates.splice(0);
@@ -186,28 +297,30 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
       }
     }
 
-    async function makeOffer(connection: Connection): Promise<void> {
-      try {
-        connection.makingOffer = true;
-        const offer = await connection.pc.createOffer();
-        await connection.pc.setLocalDescription(offer);
-        send(connection.descriptor.peerId, { kind: "offer", sdp: offer });
-      } catch {
-        // The peer can still reach us; nothing is left half-applied.
-      } finally {
-        connection.makingOffer = false;
-      }
-    }
-
     async function handleSignal(payload: SignalPayload): Promise<void> {
       const { from, data } = payload;
 
+      // A straggler from someone already gone would otherwise reopen a tile.
+      if (departed.current.has(from)) return;
+
+      // State, not negotiation: it must never open a connection on its own,
+      // or an early word from a newcomer would mint a nameless peer.
+      if (data.kind === "media") {
+        remoteMedia.current.set(from, {
+          micOn: data.micOn !== false,
+          cameraOn: data.cameraOn !== false,
+        });
+        publish();
+        return;
+      }
+
       // A signal from someone we have not met means we are the newcomer, so
-      // we take the polite role and answer rather than counter-offer.
+      // we take the polite role and answer rather than counter-offer. Who
+      // they are is filled in when the join's peer list catches up.
       const connection =
         connections.current.get(from) ??
         createConnection(
-          { peerId: from, userId: "", name: "Participant", isOrganizer: false },
+          { peerId: from, userId: "", name: "", isOrganizer: false },
           true,
         );
 
@@ -236,9 +349,18 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
         await pc.setRemoteDescription(data.sdp);
         await drainCandidates(connection);
 
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
-        send(from, { kind: "answer", sdp: answer });
+        // Send on every line we were offered, camera or not yet, so a device
+        // granted later needs no renegotiation.
+        for (const transceiver of pc.getTransceivers()) {
+          if (transceiver.currentDirection !== "stopped")
+            transceiver.direction = "sendrecv";
+        }
+        await attachLocalTracks(pc);
+
+        await pc.setLocalDescription();
+        if (pc.localDescription) {
+          send(from, { kind: "answer", sdp: pc.localDescription.toJSON() });
+        }
         publish();
       } catch {
         publish();
@@ -257,11 +379,12 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
       SignalEvent.PEER_JOINED,
       payload => {
         if (payload.callId !== callId) return;
+        departed.current.delete(payload.peerId);
 
-        // The ESTABLISHED peer offers to the newcomer. One side offering is what
-        // keeps two browsers from talking over each other.
-        const connection = createConnection(payload, false);
-        void makeOffer(connection);
+        // The ESTABLISHED peer offers to the newcomer — its transceivers make
+        // the connection ask for negotiation. One side offering is what keeps
+        // two browsers from talking over each other.
+        createConnection(payload, false);
       },
     );
 
@@ -269,6 +392,8 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
       SignalEvent.PEER_LEFT,
       payload => {
         if (payload.callId !== callId) return;
+        departed.current.add(payload.peerId);
+        remoteMedia.current.delete(payload.peerId);
         closeConnection(payload.peerId);
       },
     );
@@ -278,32 +403,30 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
       offJoined();
       offLeft();
     };
-  }, [enabled, callId, createConnection, closeConnection, send, publish]);
+  }, [callId, createConnection, closeConnection, attachLocalTracks, send, publish]);
 
   // --- peers already present when we joined --------------------------------
 
   useEffect(() => {
     if (!enabled || !initialPeers) return;
     // We are the newcomer: wait to be offered to, taking the polite role.
-    for (const peer of initialPeers) createConnection(peer, true);
+    for (const peer of initialPeers) {
+      if (!departed.current.has(peer.peerId)) createConnection(peer, true);
+    }
   }, [enabled, initialPeers, createConnection]);
 
   // --- publish local tracks once the camera is granted ---------------------
 
   useEffect(() => {
-    if (!localStream) return;
+    for (const connection of connections.current.values())
+      void attachLocalTracks(connection.pc);
+  }, [localStream, attachLocalTracks]);
 
-    for (const connection of connections.current.values()) {
-      const senders = connection.pc.getSenders();
-      for (const track of localStream.getTracks()) {
-        const existing = senders.find(
-          sender => sender.track?.kind === track.kind,
-        );
-        if (existing) void existing.replaceTrack(track);
-        else connection.pc.addTrack(track, localStream);
-      }
-    }
-  }, [localStream]);
+  // --- tell every peer when our mic or camera changes ---------------------
+
+  useEffect(() => {
+    for (const peerId of connections.current.keys()) announceMedia(peerId);
+  }, [micOn, cameraOn, announceMedia]);
 
   // --- teardown ------------------------------------------------------------
 
@@ -316,10 +439,12 @@ export function useWebRtcMesh(options: UseWebRtcMeshOptions): MeshState {
   useEffect(() => {
     const open = connections.current;
     const streams = remoteStreams.current;
+    const media = remoteMedia.current;
     return () => {
       for (const connection of open.values()) connection.pc.close();
       open.clear();
       streams.clear();
+      media.clear();
     };
   }, []);
 

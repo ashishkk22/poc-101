@@ -1,4 +1,5 @@
-import { Loader2, MicOff, VideoOff, WifiOff } from "lucide-react";
+import { useEffect, useState } from "react";
+import { MicOff, VideoOff, WifiOff } from "lucide-react";
 import { useVideoStream } from "@/features/join";
 import { cn } from "@/lib/utils";
 import { PeerState } from "@/features/call-media";
@@ -48,15 +49,19 @@ export function VideoTile({
   className,
 }: VideoTileProps) {
   const attachStream = useVideoStream(stream);
+  const framesArriving = useFramesArriving(isSelf ? null : stream);
 
   // A remote stream whose camera is off still carries audio, so the element
   // stays mounted and is merely hidden — muting the tile would mute the person.
+  // A peer's disabled camera still arrives as a live track of black frames,
+  // so for a remote tile the switch they announced is what decides; until
+  // their first frame lands they are shown by name, not as a black box.
   const hasVideoTrack = Boolean(
     stream
       ?.getVideoTracks()
       .some(track => track.enabled && track.readyState === "live"),
-  );
-  const showVideo = isSelf ? Boolean(stream) && cameraOn : hasVideoTrack;
+  ) && framesArriving;
+  const showVideo = isSelf ? Boolean(stream) && cameraOn : hasVideoTrack && cameraOn;
 
   return (
     <div
@@ -87,27 +92,22 @@ export function VideoTile({
           >
             {initials(name)}
           </span>
-          {isSelf ? (
-            <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
-              <VideoOff className="size-3" aria-hidden="true" />
-              Camera off
-            </span>
-          ) : state === PeerState.FAILED ? (
+          {/*
+            Someone in the call is shown as here from the moment they join —
+            no "connecting" limbo. Only a connection that could not be made
+            at all is worth saying out loud.
+          */}
+          {!isSelf && state === PeerState.FAILED ? (
             <span className="inline-flex items-center gap-1.5 text-xs text-destructive">
               <WifiOff className="size-3" aria-hidden="true" />
               Could not connect
             </span>
-          ) : state === PeerState.CONNECTED ? (
+          ) : isSelf || !cameraOn ? (
             <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
               <VideoOff className="size-3" aria-hidden="true" />
               Camera off
             </span>
-          ) : (
-            <span className="inline-flex items-center gap-1.5 text-xs text-white/50">
-              <Loader2 className="size-3 animate-spin" aria-hidden="true" />
-              {state === PeerState.RECONNECTING ? "Reconnecting…" : "Connecting…"}
-            </span>
-          )}
+          ) : null}
         </div>
       )}
 
@@ -131,4 +131,33 @@ export function VideoTile({
       </div>
     </div>
   );
+}
+
+/**
+ * Whether a received video track is actually delivering frames.
+ *
+ * A remote track is "muted" until media flows and again whenever it stops —
+ * before the connection is up, or while the network drops out — so this is
+ * what tells a picture from an empty or frozen box.
+ */
+function useFramesArriving(stream: MediaStream | null | undefined): boolean {
+  const [, rerender] = useState(0);
+
+  useEffect(() => {
+    const tracks = stream?.getVideoTracks() ?? [];
+    const update = () => rerender(count => count + 1);
+    for (const track of tracks) {
+      track.addEventListener?.("mute", update);
+      track.addEventListener?.("unmute", update);
+    }
+    return () => {
+      for (const track of tracks) {
+        track.removeEventListener?.("mute", update);
+        track.removeEventListener?.("unmute", update);
+      }
+    };
+  }, [stream]);
+
+  if (!stream) return true;
+  return stream.getVideoTracks().some(track => !track.muted);
 }
